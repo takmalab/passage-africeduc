@@ -1,0 +1,45 @@
+{
+  "name": "passage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Passage : suivi des passages d'élèves par badge, hors ligne, avec synthèse IA sous garde-fous (test technique Afric'Éduc, sujet B).",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "packages/shared",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/api & npm run dev --workspace apps/web",
+    "dev:api": "npm run dev --workspace apps/api",
+    "dev:web": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/web && npm run build --workspace apps/api",
+    "start": "npm run start --workspace apps/api",
+    "worker": "npm run worker --workspace apps/api",
+    "db:migrate": "npm run db:migrate --workspace apps/api",
+    "db:deploy": "npm run db:deploy --workspace apps/api",
+    "db:seed": "npm run db:seed --workspace apps/api",
+    "db:reset": "npm run db:reset --workspace apps/api",
+    "db:init:prod": "bash scripts/init-prod-db.sh",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:unit": "npm run test:unit --workspaces --if-present",
+    "test:int": "npm run test:int --workspace apps/api",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0"
+  }
+}

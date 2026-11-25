@@ -1,0 +1,27 @@
+# Dépendances et builds
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+apps/api/src/generated/
+apps/web/dev-dist/
+
+# Secrets : seuls les fichiers *.example sont versionnés
+.env
+.env.*
+!.env.example
+!.env.test.example
+certs/
+*.pem
+*.key
+
+# Divers
+.DS_Store
+*.log
+npm-debug.log*
+.vscode/*
+!.vscode/extensions.json
+.idea/
+playwright-report/
+test-results/
