@@ -23,7 +23,8 @@ export function createApp() {
   if (env.TRUST_PROXY) app.set('trust proxy', 1);
 
   app.use(securityHeaders);
-  if (env.NODE_ENV !== 'test') app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => !req.url?.startsWith('/api') } }));
+  if (env.NODE_ENV !== 'test')
+    app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => !req.url?.startsWith('/api') } }));
 
   const api = express.Router();
   api.use(express.json({ limit: '200kb' }));
@@ -53,7 +54,11 @@ export function createApp() {
       express.static(webDist, {
         index: false,
         setHeaders: (res, file) => {
-          if (file.endsWith('sw.js') || file.endsWith('.webmanifest') || file.endsWith('index.html')) {
+          if (
+            file.endsWith('sw.js') ||
+            file.endsWith('.webmanifest') ||
+            file.endsWith('index.html')
+          ) {
             res.set('Cache-Control', 'no-cache');
           }
         },

@@ -9,7 +9,9 @@ import pg from 'pg';
 export default async function setup() {
   const url = process.env.TEST_DATABASE_URL;
   if (!url || !/test/i.test(url)) {
-    throw new Error(`Refus : la base de test doit contenir « test » dans son nom (${url ?? 'vide'}).`);
+    throw new Error(
+      `Refus : la base de test doit contenir « test » dans son nom (${url ?? 'vide'}).`,
+    );
   }
   const client = new pg.Client({ connectionString: url });
   await client.connect();

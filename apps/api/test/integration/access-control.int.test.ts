@@ -19,7 +19,7 @@ describe('rôles contrôlés côté serveur', () => {
     }
   });
 
-  it("refuse la synchronisation à un parent (403)", async () => {
+  it('refuse la synchronisation à un parent (403)', async () => {
     await seedWorld();
     const c = await loggedIn('parent.a');
     expect((await c.post('/api/agent/sync', {})).status).toBe(403);
@@ -68,7 +68,7 @@ describe('entrées validées et texte jamais exécuté', () => {
   it('rejette une date malformée (tentative d’injection) avec 400', async () => {
     await seedWorld();
     const c = await loggedIn('responsable');
-    const res = await c.get("/api/manager/passages?date=2026-11-25';DROP TABLE \"User\";--");
+    const res = await c.get('/api/manager/passages?date=2026-11-25\';DROP TABLE "User";--');
     expect(res.status).toBe(400);
     expect(await prisma.user.count()).toBeGreaterThan(0);
   });

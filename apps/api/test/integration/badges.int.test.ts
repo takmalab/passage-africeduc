@@ -10,11 +10,15 @@ function scanner(w: World) {
   const agent = { id: w.agent.id, establishmentId: w.est.id };
   const deviceId = randomUUID();
   return async (rawCode: string, time = Date.now(), device = deviceId) => {
-    const res = await ingestBatch(agent, {
-      deviceId: device,
-      deviceSentAt: time,
-      events: [scanEvent(rawCode, w.entry.id, time)],
-    }, time + 1000);
+    const res = await ingestBatch(
+      agent,
+      {
+        deviceId: device,
+        deviceSentAt: time,
+        events: [scanEvent(rawCode, w.entry.id, time)],
+      },
+      time + 1000,
+    );
     return res.acks[0]!;
   };
 }
@@ -51,7 +55,9 @@ describe('carte NFC : résistance à la copie', () => {
     const t0 = Date.now() - 60 * 60_000;
     // Bus (appareil B) à 7 h 05 avec le compteur 6, synchronisé en premier ;
     // portail (appareil A) à 7 h 00 avec le compteur 5, synchronisé plus tard.
-    expect((await scan(tap(w.students[0]!, 6), t0 + 5 * 60_000, randomUUID())).verdict).toBe('ACCEPTED');
+    expect((await scan(tap(w.students[0]!, 6), t0 + 5 * 60_000, randomUUID())).verdict).toBe(
+      'ACCEPTED',
+    );
     expect((await scan(tap(w.students[0]!, 5), t0, randomUUID())).verdict).toBe('ACCEPTED');
   });
 
@@ -76,7 +82,10 @@ describe('carte NFC : résistance à la copie', () => {
     expect((await scan(tap(oldCard, 1))).verdict).toBe('ACCEPTED');
 
     const c = await loggedIn('responsable');
-    const res = await c.post(`/api/manager/students/${oldCard.id}/badges`, { kind: 'NFC', replaceReason: 'LOST' });
+    const res = await c.post(`/api/manager/students/${oldCard.id}/badges`, {
+      kind: 'NFC',
+      replaceReason: 'LOST',
+    });
     expect(res.status).toBe(201);
     expect(res.body.nfcProgramming.macKey).toMatch(/^[0-9A-F]{32}$/);
 
@@ -88,11 +97,16 @@ describe('carte NFC : résistance à la copie', () => {
     expect(badges.map((b) => b.status).sort()).toEqual(['LOST', 'PENDING_ACTIVATION']);
   });
 
-  it("garantit en base un seul badge vivant par élève", async () => {
+  it('garantit en base un seul badge vivant par élève', async () => {
     const w = await seedWorld();
     await expect(
       prisma.badge.create({
-        data: { publicId: 'Zz'.repeat(8), studentId: w.students[0]!.id, kind: 'NFC', status: 'PENDING_ACTIVATION' },
+        data: {
+          publicId: 'Zz'.repeat(8),
+          studentId: w.students[0]!.id,
+          kind: 'NFC',
+          status: 'PENDING_ACTIVATION',
+        },
       }),
     ).rejects.toThrow();
   });
@@ -100,7 +114,12 @@ describe('carte NFC : résistance à la copie', () => {
   it('le simulateur produit des codes acceptés une seule fois chacun', async () => {
     const w = await seedWorld();
     const student = await prisma.student.create({
-      data: { firstName: 'Simu', lastName: 'Test', classroomId: w.classroom.id, establishmentId: w.est.id },
+      data: {
+        firstName: 'Simu',
+        lastName: 'Test',
+        classroomId: w.classroom.id,
+        establishmentId: w.est.id,
+      },
     });
     const c = await loggedIn('responsable');
     const issued = await c.post(`/api/manager/students/${student.id}/badges`, { kind: 'NFC' });
@@ -130,7 +149,10 @@ describe('carte QR imprimée (mode optionnel)', () => {
 
   it("ne contient pas l'identifiant de l'élève et détecte une copie utilisée ailleurs", async () => {
     const w = await seedWorld();
-    await prisma.establishment.update({ where: { id: w.est.id }, data: { allowPrintedBadges: true } });
+    await prisma.establishment.update({
+      where: { id: w.est.id },
+      data: { allowPrintedBadges: true },
+    });
     const c = await loggedIn('responsable');
     const student = w.students[2]!;
     const res = await c.post(`/api/manager/students/${student.id}/badges`, {
@@ -144,8 +166,33 @@ describe('carte QR imprimée (mode optionnel)', () => {
 
     const scan = scanner(w);
     expect((await scan(code)).verdict).toBe('ACCEPTED');
-    // Photo du QR présentée sur un autre appareil deux minutes plus tard.
-    await scan(code, Date.now() + 120_000, randomUUID());
+    // Photo du QR présentée au même portail, depuis un autre appareil, 10 min plus tard : refusée.
+    const photo = await scan(code, Date.now() + 10 * 60_000, randomUUID());
+    expect(photo).toMatchObject({ verdict: 'REFUSED', reason: 'CODE_ALREADY_USED' });
+    expect(await prisma.anomaly.count({ where: { type: 'BADGE_REPLAY' } })).toBe(1);
+  });
+
+  it('une carte imprimée utilisée sur deux points en même temps est signalée comme clone', async () => {
+    const w = await seedWorld();
+    await prisma.establishment.update({
+      where: { id: w.est.id },
+      data: { allowPrintedBadges: true },
+    });
+    const c = await loggedIn('responsable');
+    const res = await c.post(`/api/manager/students/${w.students[2]!.id}/badges`, {
+      kind: 'PRINTED',
+      replaceReason: 'REVOKED',
+    });
+    const code: string = res.body.printedCode;
+    const agent = { id: w.agent.id, establishmentId: w.est.id };
+    const at = (cp: string, t: number) =>
+      ingestBatch(
+        agent,
+        { deviceId: randomUUID(), deviceSentAt: t, events: [scanEvent(code, cp, t)] },
+        t + 1000,
+      );
+    await at(w.entry.id, Date.now());
+    await at(w.bus.id, Date.now() + 60_000);
     const clone = await prisma.anomaly.findFirstOrThrow({ where: { type: 'BADGE_REPLAY' } });
     expect(clone.details).toMatchObject({ suspectedClone: true });
   });

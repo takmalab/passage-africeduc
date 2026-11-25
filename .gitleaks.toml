@@ -1,0 +1,12 @@
+# Les seules valeurs « ressemblant à des secrets » du dépôt sont des clés de TEST
+# documentées (aucune carte réelle) et les vecteurs publics de NXP / RFC 4493.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Clés de test et vecteurs publics"
+regexes = [
+  '''00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff''',
+  '''2b7e151628aed2a6abf7158809cf4f3c''',
+]
+paths = ['''apps/api/test/''', '''packages/shared/src/shared.test.ts''']

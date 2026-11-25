@@ -1,9 +1,23 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { z } from 'zod';
 
-// Le fichier .env est à la racine du monorepo (jamais versionné).
-loadEnv({ path: path.resolve(import.meta.dirname, '../../../../.env'), quiet: true });
+// Le fichier .env est à la racine du monorepo (jamais versionné). On le cherche en
+// remontant depuis le dossier courant, que l'on lance le code source ou le build.
+function findEnvFile(): string | undefined {
+  for (const start of [process.cwd(), import.meta.dirname]) {
+    let dir = start;
+    for (let i = 0; i < 5; i++) {
+      const candidate = path.join(dir, '.env');
+      if (fs.existsSync(candidate)) return candidate;
+      dir = path.dirname(dir);
+    }
+  }
+  return undefined;
+}
+const envFile = findEnvFile();
+if (envFile) loadEnv({ path: envFile, quiet: true });
 
 const bool = z
   .enum(['true', 'false', '1', '0', ''])
@@ -43,6 +57,8 @@ const schema = z.object({
   DOUBLE_SCAN_SECONDS: intFrom(60),
   WINDOW_GRACE_MINUTES: intFrom(15),
   PRINTED_CLONE_MINUTES: intFrom(5),
+  /** Carte QR imprimée : une seule validation par point dans cette fenêtre (minutes). */
+  PRINTED_REUSE_MINUTES: intFrom(120),
   SCHEDULER_ENABLED: bool,
   SCHEDULER_INTERVAL_SECONDS: intFrom(60),
 

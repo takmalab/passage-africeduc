@@ -45,7 +45,13 @@ export const ALLOWED_PLACEHOLDERS = [
 ] as const;
 
 /** Marqueurs obligatoires : la synthèse doit au moins dire ces chiffres. */
-export const REQUIRED_PLACEHOLDERS = ['present', 'enrolled', 'late', 'outOfWindow', 'missed'] as const;
+export const REQUIRED_PLACEHOLDERS = [
+  'present',
+  'enrolled',
+  'late',
+  'outOfWindow',
+  'missed',
+] as const;
 
 const NUMBER_WORDS =
   /\b(z[ée]ro|une?|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|cent|cents|mille|dizaines?|douzaines?|centaines?|aucune?s?|tou(?:te)?s|plusieurs|quelques|nombreu(?:x|ses)|majorit[ée]|moiti[ée]|totalit[ée]|ensemble des|la plupart)\b/i;

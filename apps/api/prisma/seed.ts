@@ -32,7 +32,9 @@ const WEEKDAYS = [1, 2, 3, 4, 5];
 
 async function main() {
   if (env.NODE_ENV === 'production' && process.env.SEED_FORCE !== 'true') {
-    throw new Error('Seed refusé en production (il vide la base). Définir SEED_FORCE=true pour forcer.');
+    throw new Error(
+      'Seed refusé en production (il vide la base). Définir SEED_FORCE=true pour forcer.',
+    );
   }
   const password = process.env.SEED_PASSWORD ?? 'Passage2026!';
 
@@ -48,10 +50,40 @@ async function main() {
 
   const hash = await hashPassword(password);
   const [manager, agent, parentA, parentB] = await Promise.all([
-    prisma.user.create({ data: { name: 'Mme Responsable', login: 'responsable', passwordHash: hash, role: 'MANAGER', establishmentId: est.id } }),
-    prisma.user.create({ data: { name: 'M. Agent', login: 'agent', passwordHash: hash, role: 'AGENT', establishmentId: est.id } }),
-    prisma.user.create({ data: { name: 'Parent de Awa et Junior', login: 'parent.awa', passwordHash: hash, role: 'PARENT' } }),
-    prisma.user.create({ data: { name: 'Parent de Kevin et Clarisse', login: 'parent.kevin', passwordHash: hash, role: 'PARENT' } }),
+    prisma.user.create({
+      data: {
+        name: 'Mme Responsable',
+        login: 'responsable',
+        passwordHash: hash,
+        role: 'MANAGER',
+        establishmentId: est.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        name: 'M. Agent',
+        login: 'agent',
+        passwordHash: hash,
+        role: 'AGENT',
+        establishmentId: est.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        name: 'Parent de Awa et Junior',
+        login: 'parent.awa',
+        passwordHash: hash,
+        role: 'PARENT',
+      },
+    }),
+    prisma.user.create({
+      data: {
+        name: 'Parent de Kevin et Clarisse',
+        login: 'parent.kevin',
+        passwordHash: hash,
+        role: 'PARENT',
+      },
+    }),
   ]);
 
   const [c3a, c3b] = await Promise.all([
@@ -60,9 +92,15 @@ async function main() {
   ]);
 
   const [entry, exit, bus] = await Promise.all([
-    prisma.checkpoint.create({ data: { label: 'Portail entrée', type: 'GATE', establishmentId: est.id } }),
-    prisma.checkpoint.create({ data: { label: 'Portail sortie', type: 'GATE', establishmentId: est.id } }),
-    prisma.checkpoint.create({ data: { label: 'Bus ligne 1', type: 'BUS', establishmentId: est.id } }),
+    prisma.checkpoint.create({
+      data: { label: 'Portail entrée', type: 'GATE', establishmentId: est.id },
+    }),
+    prisma.checkpoint.create({
+      data: { label: 'Portail sortie', type: 'GATE', establishmentId: est.id },
+    }),
+    prisma.checkpoint.create({
+      data: { label: 'Bus ligne 1', type: 'BUS', establishmentId: est.id },
+    }),
   ]);
 
   const roster: [string, string, string, boolean][] = [
@@ -78,7 +116,12 @@ async function main() {
     ['Linda', 'Nkemdirim', c3b.id, false],
   ];
 
-  const students = [];
+  type SeededStudent = Awaited<ReturnType<typeof prisma.student.create>> & {
+    badgeId: string;
+    uid: string;
+    takesBus: boolean;
+  };
+  const students: SeededStudent[] = [];
   for (const [firstName, lastName, classroomId, takesBus] of roster) {
     const student = await prisma.student.create({
       data: { firstName, lastName, classroomId, establishmentId: est.id },
@@ -149,7 +192,12 @@ async function main() {
         deviceId,
         deviceSentAt: time,
         events: [
-          { localEventId: randomUUID(), rawCode: formatNfcCode(tap.piccData, tap.mac), checkpointId, deviceLocalTime: time },
+          {
+            localEventId: randomUUID(),
+            rawCode: formatNfcCode(tap.piccData, tap.mac),
+            checkpointId,
+            deviceLocalTime: time,
+          },
         ],
       },
       time + 2000,
@@ -160,7 +208,15 @@ async function main() {
   // Bus : Kevin passe, Clarisse non (anomalie « point manquant »).
   await scan('Kevin', bus.id, at(6, 32));
   // Entrée : 8 élèves à l'heure, Samuel en retard, Linda absente justifiée, Grace absente.
-  for (const [n, m] of [['Awa', 7], ['Kevin', 9], ['Brenda', 12], ['Clarisse', 14], ['Yannick', 20], ['Junior', 22], ['Hervé', 30]] as const) {
+  for (const [n, m] of [
+    ['Awa', 7],
+    ['Kevin', 9],
+    ['Brenda', 12],
+    ['Clarisse', 14],
+    ['Yannick', 20],
+    ['Junior', 22],
+    ['Hervé', 30],
+  ] as const) {
     await scan(n, entry.id, at(7, m));
   }
   await scan('Samuel', entry.id, at(7, 58));
@@ -176,7 +232,15 @@ async function main() {
   });
   // Sortie : Brenda sort à 14:10 (hors plage), les autres à l'heure.
   await scan('Brenda', exit.id, at(14, 10));
-  for (const [n, m] of [['Awa', 35], ['Kevin', 36], ['Samuel', 40], ['Clarisse', 41], ['Yannick', 44], ['Junior', 50], ['Hervé', 55]] as const) {
+  for (const [n, m] of [
+    ['Awa', 35],
+    ['Kevin', 36],
+    ['Samuel', 40],
+    ['Clarisse', 41],
+    ['Yannick', 44],
+    ['Junior', 50],
+    ['Hervé', 55],
+  ] as const) {
     await scan(n, exit.id, at(15, m));
   }
 
@@ -193,7 +257,9 @@ async function main() {
     messages: await prisma.outboundMessage.count(),
   };
   console.log(`Seed terminé. Journée de démonstration : ${day}.`, counts);
-  console.log(`Comptes : responsable, agent, parent.awa, parent.kevin (mot de passe : ${password})`);
+  console.log(
+    `Comptes : responsable, agent, parent.awa, parent.kevin (mot de passe : ${password})`,
+  );
 }
 
 main()

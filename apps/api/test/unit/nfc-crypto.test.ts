@@ -25,7 +25,7 @@ describe('AES-CMAC (vecteurs officiels RFC 4493)', () => {
 describe('NTAG 424 DNA SUN (vecteurs officiels NXP AN12196)', () => {
   const zeroKey = Buffer.alloc(16);
 
-  it("déchiffre PICCData : UID et compteur", () => {
+  it('déchiffre PICCData : UID et compteur', () => {
     expect(decryptPiccData(zeroKey, 'EF963FF7828658A599F3041510671E88')).toEqual({
       uid: '04DE5F1EACC040',
       counter: 0x3d,
@@ -36,7 +36,7 @@ describe('NTAG 424 DNA SUN (vecteurs officiels NXP AN12196)', () => {
     expect(computeSdmMac(zeroKey, '04DE5F1EACC040', 0x3d)).toBe('94EED9EE65337086');
   });
 
-  it("refuse une PICCData déchiffrée avec la mauvaise clé", () => {
+  it('refuse une PICCData déchiffrée avec la mauvaise clé', () => {
     expect(decryptPiccData(Buffer.alloc(16, 1), 'EF963FF7828658A599F3041510671E88')).toBeNull();
   });
 });
@@ -59,7 +59,7 @@ describe('simulateur de carte', () => {
     expect(a.mac).not.toBe(b.mac);
   });
 
-  it("une autre clé MAC produit une autre signature (impossible de forger sans la clé)", () => {
+  it('une autre clé MAC produit une autre signature (impossible de forger sans la clé)', () => {
     expect(computeSdmMac(Buffer.alloc(16, 8), uid, 42)).not.toBe(computeSdmMac(macKey, uid, 42));
   });
 });

@@ -16,8 +16,14 @@ describe('authentification', () => {
   it('renvoie le même message que le compte existe ou non', async () => {
     await seedWorld();
     const c = client();
-    const wrongPassword = await c.post('/api/auth/login', { login: 'responsable', password: 'faux-mot-de-passe' });
-    const unknownLogin = await c.post('/api/auth/login', { login: 'personne', password: 'faux-mot-de-passe' });
+    const wrongPassword = await c.post('/api/auth/login', {
+      login: 'responsable',
+      password: 'faux-mot-de-passe',
+    });
+    const unknownLogin = await c.post('/api/auth/login', {
+      login: 'personne',
+      password: 'faux-mot-de-passe',
+    });
     expect(wrongPassword.status).toBe(401);
     expect(unknownLogin.status).toBe(401);
     expect(wrongPassword.body.error.message).toBe(LOGIN_FAILED_MESSAGE);
@@ -39,7 +45,10 @@ describe('authentification', () => {
 
   it('pose un cookie HttpOnly SameSite=Strict', async () => {
     await seedWorld();
-    const res = await client().post('/api/auth/login', { login: 'responsable', password: PASSWORD });
+    const res = await client().post('/api/auth/login', {
+      login: 'responsable',
+      password: PASSWORD,
+    });
     const cookie = String(res.headers['set-cookie']);
     expect(cookie).toMatch(/HttpOnly/i);
     expect(cookie).toMatch(/SameSite=Strict/i);

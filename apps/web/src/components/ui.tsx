@@ -5,7 +5,8 @@ type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-teal-700 text-white hover:bg-teal-800 disabled:bg-teal-700/50',
-  secondary: 'bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 disabled:opacity-50',
+  secondary:
+    'bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 disabled:opacity-50',
   danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-600/50',
   ghost: 'text-slate-700 hover:bg-slate-100',
 };
@@ -29,7 +30,17 @@ export function Button({
   );
 }
 
-export function Card({ title, actions, children, className = '' }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
+export function Card({
+  title,
+  actions,
+  children,
+  className = '',
+}: {
+  title?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>
       {(title || actions) && (
@@ -51,15 +62,30 @@ const TONES = {
   info: 'bg-sky-100 text-sky-800',
 } as const;
 
-export function Pill({ tone = 'neutral', children }: { tone?: keyof typeof TONES; children: ReactNode }) {
-  return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${TONES[tone]}`}>{children}</span>;
+export function Pill({
+  tone = 'neutral',
+  children,
+}: {
+  tone?: keyof typeof TONES;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${TONES[tone]}`}
+    >
+      {children}
+    </span>
+  );
 }
 
 export function ErrorBox({ error }: { error: unknown }) {
   if (!error) return null;
   const message = error instanceof Error ? error.message : String(error);
   return (
-    <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+    <div
+      role="alert"
+      className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+    >
       <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
       <span>{message}</span>
     </div>

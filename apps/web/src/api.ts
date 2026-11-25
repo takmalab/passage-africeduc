@@ -15,7 +15,10 @@ export class ApiError extends Error {
 /** Erreur réseau (hors ligne, serveur injoignable). */
 export class NetworkError extends Error {}
 
-export async function api<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+export async function api<T>(
+  path: string,
+  init: { method?: string; body?: unknown } = {},
+): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`/api${path}`, {

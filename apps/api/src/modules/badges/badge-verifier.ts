@@ -14,6 +14,7 @@ type Context = {
   allowPrintedBadges: boolean;
   /** Heure retenue du passage (corrigée du décalage d'horloge). */
   effectiveTime: Date;
+  checkpointId: string;
 };
 
 /**
@@ -35,13 +36,37 @@ export async function verifyBadgeCode(
       where: { publicId: code.publicId },
       include: { student: { select: { establishmentId: true } } },
     });
-    if (!badge || badge.kind !== 'PRINTED' || badge.student.establishmentId !== ctx.establishmentId) {
+    if (
+      !badge ||
+      badge.kind !== 'PRINTED' ||
+      badge.student.establishmentId !== ctx.establishmentId
+    ) {
       return refused('UNKNOWN_BADGE');
     }
     if (!badge.staticSecretHash || !safeEqual(sha256Hex(code.secret), badge.staticSecretHash)) {
       return refused('BAD_SIGNATURE', badge);
     }
     if (badge.status !== 'ACTIVE') return refused('BADGE_INACTIVE', badge);
+
+    // Un QR imprimé ne change jamais : on limite sa réutilisation. Une même carte
+    // ne passe qu'une fois au même point dans la fenêtre de réutilisation. Une
+    // photo présentée après l'élève est donc refusée ; présentée avant lui, c'est
+    // le passage de l'élève qui est refusé et l'agent est alerté sur-le-champ.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${badge.id}, 0))`;
+    const windowMs = env.PRINTED_REUSE_MINUTES * 60_000;
+    const recent = await tx.passage.findFirst({
+      where: {
+        badgeId: badge.id,
+        checkpointId: ctx.checkpointId,
+        verdict: 'ACCEPTED',
+        effectiveTime: {
+          gt: new Date(ctx.effectiveTime.getTime() - windowMs),
+          lt: new Date(ctx.effectiveTime.getTime() + windowMs),
+        },
+      },
+      select: { id: true },
+    });
+    if (recent) return refused('CODE_ALREADY_USED', badge);
     return { verdict: 'ACCEPTED', badge, counter: null };
   }
 

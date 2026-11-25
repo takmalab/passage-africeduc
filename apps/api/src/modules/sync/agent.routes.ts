@@ -20,6 +20,9 @@ agentRouter.get('/checkpoints', async (req, res) => {
 agentRouter.post('/sync', async (req, res) => {
   const batch = syncBatchSchema.parse(req.body);
   const user = currentUser(req);
-  const result = await ingestBatch({ id: user.id, establishmentId: staffEstablishment(req) }, batch);
+  const result = await ingestBatch(
+    { id: user.id, establishmentId: staffEstablishment(req) },
+    batch,
+  );
   res.json(result);
 });

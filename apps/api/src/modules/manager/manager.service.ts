@@ -1,5 +1,10 @@
 import { addDaysToDateKey, formatMinute, parseMinute } from '@passage/shared';
-import { prisma, type AnomalyStatus, type CheckpointType, type ExceptionType } from '../../db/prisma.js';
+import {
+  prisma,
+  type AnomalyStatus,
+  type CheckpointType,
+  type ExceptionType,
+} from '../../db/prisma.js';
 import { badRequest, notFound } from '../../lib/errors.js';
 import { dateFromKey } from '../anomalies/anomalies.service.js';
 
@@ -28,7 +33,12 @@ export async function listStudents(establishmentId: string) {
       classroom: { select: { id: true, name: true } },
       badges: {
         where: { status: { in: ['PENDING_ACTIVATION', 'ACTIVE', 'SUSPENDED'] } },
-        select: { id: true, kind: true, status: true, simulatedCard: { select: { badgeId: true } } },
+        select: {
+          id: true,
+          kind: true,
+          status: true,
+          simulatedCard: { select: { badgeId: true } },
+        },
       },
     },
   });
@@ -36,7 +46,9 @@ export async function listStudents(establishmentId: string) {
     const b = badges[0];
     return {
       ...s,
-      badge: b ? { id: b.id, kind: b.kind, status: b.status, simulated: Boolean(b.simulatedCard) } : null,
+      badge: b
+        ? { id: b.id, kind: b.kind, status: b.status, simulated: Boolean(b.simulatedCard) }
+        : null,
     };
   });
 }
@@ -145,9 +157,9 @@ export async function replaceRoute(
   const student = await prisma.student.findFirst({ where: { id: studentId, establishmentId } });
   if (!student) throw notFound('Élève introuvable.');
   const checkpointIds = new Set(
-    (
-      await prisma.checkpoint.findMany({ where: { establishmentId }, select: { id: true } })
-    ).map((c) => c.id),
+    (await prisma.checkpoint.findMany({ where: { establishmentId }, select: { id: true } })).map(
+      (c) => c.id,
+    ),
   );
   const parsed = steps.map((s, i) => {
     const startMinute = parseMinute(s.start);
@@ -194,7 +206,12 @@ export async function listExceptions(establishmentId: string, fromKey: string) {
 export async function createException(
   establishmentId: string,
   createdById: string,
-  input: { dateKey: string; type: ExceptionType; studentId?: string | null; reason?: string | null },
+  input: {
+    dateKey: string;
+    type: ExceptionType;
+    studentId?: string | null;
+    reason?: string | null;
+  },
 ) {
   if (input.type === 'HOLIDAY' && input.studentId) {
     throw badRequest('Un jour férié concerne tout l’établissement.');

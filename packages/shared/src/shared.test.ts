@@ -8,7 +8,7 @@ import {
   parseBadgeCode,
   parseMinute,
   startOfLocalDayUtc,
-} from './index';
+} from './index.js';
 
 const PUBLIC_ID = 'AbCdEfGhIjKlMnOp';
 const SECRET = 's'.repeat(32);

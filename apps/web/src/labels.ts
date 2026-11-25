@@ -24,7 +24,10 @@ export const BADGE_STATUS: Record<string, string> = {
   REVOKED: 'Révoquée',
 };
 
-export const BADGE_KIND: Record<string, string> = { NFC: 'Carte NFC', PRINTED: 'Carte QR imprimée' };
+export const BADGE_KIND: Record<string, string> = {
+  NFC: 'Carte NFC',
+  PRINTED: 'Carte QR imprimée',
+};
 
 export const MESSAGE_STATUS: Record<string, string> = {
   PENDING: 'En attente',
@@ -55,7 +58,15 @@ export const refusalLabel = (reason?: string | null) =>
   reason ? (REFUSAL_LABELS[reason as RefusalReason] ?? reason) : '';
 
 export const fmtTime = (iso: string | number) =>
-  new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Douala' });
+  new Date(iso).toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Africa/Douala',
+  });
 
 export const fmtDateTime = (iso: string | number) =>
-  new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Africa/Douala' });
+  new Date(iso).toLocaleString('fr-FR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'Africa/Douala',
+  });

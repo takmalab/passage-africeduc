@@ -23,7 +23,9 @@ describe('synchronisation hors ligne', () => {
     const c = await loggedIn('agent');
     const res = await c.post('/api/agent/sync', { deviceId, deviceSentAt: Date.now(), events });
     expect(res.status).toBe(200);
-    expect(res.body.acks.filter((a: { storage: string }) => a.storage === 'created')).toHaveLength(20);
+    expect(res.body.acks.filter((a: { storage: string }) => a.storage === 'created')).toHaveLength(
+      20,
+    );
     expect(await prisma.passage.count()).toBe(20);
   });
 
@@ -40,7 +42,11 @@ describe('synchronisation hors ligne', () => {
     const { events, deviceId } = await twentyScans();
     const c = await loggedIn('agent');
     // Coupure : seuls 12 scans sont arrivés, le téléphone n'a pas reçu l'accusé.
-    await c.post('/api/agent/sync', { deviceId, deviceSentAt: Date.now(), events: events.slice(0, 12) });
+    await c.post('/api/agent/sync', {
+      deviceId,
+      deviceSentAt: Date.now(),
+      events: events.slice(0, 12),
+    });
     // Au retour du réseau, il renvoie tout ce qui n'a pas été confirmé, donc les 20.
     const resumed = await c.post('/api/agent/sync', { deviceId, deviceSentAt: Date.now(), events });
     const storage = resumed.body.acks.map((a: { storage: string }) => a.storage);
@@ -89,21 +95,27 @@ describe('synchronisation hors ligne', () => {
     expect(await prisma.badgeCodeUse.count()).toBe(0);
   });
 
-  it("refuse un appareil déjà enregistré dans un autre établissement", async () => {
+  it('refuse un appareil déjà enregistré dans un autre établissement', async () => {
     const w = await seedWorld();
     const other = await seedWorld('-b');
     const deviceId = randomUUID();
-    await ingestBatch({ id: w.agent.id, establishmentId: w.est.id }, {
-      deviceId,
-      deviceSentAt: Date.now(),
-      events: [scanEvent(tap(w.students[0]!, 1), w.entry.id, Date.now())],
-    });
-    await expect(
-      ingestBatch({ id: other.agent.id, establishmentId: other.est.id }, {
+    await ingestBatch(
+      { id: w.agent.id, establishmentId: w.est.id },
+      {
         deviceId,
         deviceSentAt: Date.now(),
-        events: [scanEvent(tap(other.students[0]!, 1), other.entry.id, Date.now())],
-      }),
+        events: [scanEvent(tap(w.students[0]!, 1), w.entry.id, Date.now())],
+      },
+    );
+    await expect(
+      ingestBatch(
+        { id: other.agent.id, establishmentId: other.est.id },
+        {
+          deviceId,
+          deviceSentAt: Date.now(),
+          events: [scanEvent(tap(other.students[0]!, 1), other.entry.id, Date.now())],
+        },
+      ),
     ).rejects.toThrow();
   });
 });

@@ -35,15 +35,36 @@ export function LoginPage() {
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="login">Identifiant</label>
-          <input id="login" className={inputClass} autoComplete="username" value={loginValue} onChange={(e) => setLogin(e.target.value)} required />
+          <label className="mb-1 block text-sm font-medium" htmlFor="login">
+            Identifiant
+          </label>
+          <input
+            id="login"
+            className={inputClass}
+            autoComplete="username"
+            value={loginValue}
+            onChange={(e) => setLogin(e.target.value)}
+            required
+          />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="password">Mot de passe</label>
-          <input id="password" type="password" className={inputClass} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <label className="mb-1 block text-sm font-medium" htmlFor="password">
+            Mot de passe
+          </label>
+          <input
+            id="password"
+            type="password"
+            className={inputClass}
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
         </div>
         <ErrorBox error={error} />
-        <Button type="submit" className="w-full" loading={loading}>Se connecter</Button>
+        <Button type="submit" className="w-full" loading={loading}>
+          Se connecter
+        </Button>
       </form>
     </div>
   );

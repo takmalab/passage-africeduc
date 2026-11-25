@@ -24,7 +24,8 @@ export function App() {
   if (loading) return <Spinner />;
   if (!user) return <LoginPage />;
 
-  const only = (role: Role, element: React.ReactNode) => (user.role === role ? element : <Navigate to={HOME[user.role]} replace />);
+  const only = (role: Role, element: React.ReactNode) =>
+    user.role === role ? element : <Navigate to={HOME[user.role]} replace />;
 
   return (
     <Routes>

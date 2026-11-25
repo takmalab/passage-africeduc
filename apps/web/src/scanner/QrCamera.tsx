@@ -17,13 +17,16 @@ export function QrCamera({ onCode }: { onCode: (code: string) => void }) {
       (result) => {
         // Évite de relire le même QR en boucle pendant qu'il reste devant la caméra.
         const now = Date.now();
-        if (last.current && last.current.code === result.data && now - last.current.at < 3000) return;
+        if (last.current && last.current.code === result.data && now - last.current.at < 3000)
+          return;
         last.current = { code: result.data, at: now };
         onCode(result.data);
       },
       { returnDetailedScanResult: true, highlightScanRegion: true, maxScansPerSecond: 5 },
     );
-    scanner.start().catch(() => setError('Caméra indisponible (autorisation refusée ou page non sécurisée).'));
+    scanner
+      .start()
+      .catch(() => setError('Caméra indisponible (autorisation refusée ou page non sécurisée).'));
     return () => {
       scanner.stop();
       scanner.destroy();
@@ -32,7 +35,12 @@ export function QrCamera({ onCode }: { onCode: (code: string) => void }) {
 
   return (
     <div className="space-y-2">
-      <video ref={video} className="aspect-square w-full rounded-xl bg-slate-900 object-cover" muted playsInline />
+      <video
+        ref={video}
+        className="aspect-square w-full rounded-xl bg-slate-900 object-cover"
+        muted
+        playsInline
+      />
       {error && <p className="text-sm text-red-700">{error}</p>}
     </div>
   );

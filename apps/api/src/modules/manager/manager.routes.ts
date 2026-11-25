@@ -35,7 +35,11 @@ managerRouter.get('/establishment', async (req, res) => {
     where: { id: staffEstablishment(req) },
     select: { id: true, name: true, timezone: true, allowPrintedBadges: true },
   });
-  res.json({ establishment: est, today: localParts(new Date(), est.timezone).dateKey, simulator: env.CARD_SIMULATOR_ENABLED });
+  res.json({
+    establishment: est,
+    today: localParts(new Date(), est.timezone).dateKey,
+    simulator: env.CARD_SIMULATOR_ENABLED,
+  });
 });
 
 managerRouter.patch('/establishment', async (req, res) => {
@@ -107,14 +111,20 @@ managerRouter.post('/students/:id/badges', async (req, res) => {
     .strict()
     .parse(req.body);
   const result = await issueBadge(staffEstablishment(req), id, body.kind, body.replaceReason);
-  await audit(req, 'badge.issue', 'Badge', result.badge.id, { kind: body.kind, replace: body.replaceReason ?? null });
+  await audit(req, 'badge.issue', 'Badge', result.badge.id, {
+    kind: body.kind,
+    replace: body.replaceReason ?? null,
+  });
   // Le secret imprimé et les clés de programmation ne sont jamais réaffichés.
   res.set('Cache-Control', 'no-store').status(201).json(result);
 });
 
 managerRouter.post('/badges/:id/activate', async (req, res) => {
   const id = uuid.parse(req.params.id);
-  const body = z.object({ rawCode: z.string().min(1).max(300) }).strict().parse(req.body);
+  const body = z
+    .object({ rawCode: z.string().min(1).max(300) })
+    .strict()
+    .parse(req.body);
   const badge = await activateNfcBadge(staffEstablishment(req), id, body.rawCode);
   await audit(req, 'badge.activate', 'Badge', id);
   res.json({ badge });
@@ -150,7 +160,10 @@ managerRouter.get('/checkpoints', async (req, res) => {
 });
 
 managerRouter.post('/checkpoints', async (req, res) => {
-  const body = z.object({ label: name, type: z.enum(['GATE', 'BUS']) }).strict().parse(req.body);
+  const body = z
+    .object({ label: name, type: z.enum(['GATE', 'BUS']) })
+    .strict()
+    .parse(req.body);
   const checkpoint = await svc.createCheckpoint(staffEstablishment(req), body);
   await audit(req, 'checkpoint.create', 'Checkpoint', checkpoint.id);
   res.status(201).json({ checkpoint });
@@ -197,7 +210,10 @@ managerRouter.get('/anomalies', async (req, res) => {
 
 managerRouter.patch('/anomalies/:id', async (req, res) => {
   const id = uuid.parse(req.params.id);
-  const body = z.object({ status: z.enum(['ACKNOWLEDGED', 'RESOLVED']) }).strict().parse(req.body);
+  const body = z
+    .object({ status: z.enum(['ACKNOWLEDGED', 'RESOLVED']) })
+    .strict()
+    .parse(req.body);
   await svc.updateAnomalyStatus(staffEstablishment(req), id, body.status);
   await audit(req, 'anomaly.status', 'Anomaly', id, body);
   res.status(204).end();

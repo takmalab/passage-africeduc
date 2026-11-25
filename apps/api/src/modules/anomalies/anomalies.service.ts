@@ -88,7 +88,11 @@ export async function evaluatePassage(passage: Passage, timezone: string): Promi
 
   if (passage.verdict === 'REFUSED') {
     const reason = passage.refusalReason;
-    if (reason === 'CODE_ALREADY_USED' || reason === 'CODE_OUT_OF_ORDER' || reason === 'BAD_SIGNATURE') {
+    if (
+      reason === 'CODE_ALREADY_USED' ||
+      reason === 'CODE_OUT_OF_ORDER' ||
+      reason === 'BAD_SIGNATURE'
+    ) {
       await raiseAnomaly({
         ...base,
         type: 'BADGE_REPLAY',

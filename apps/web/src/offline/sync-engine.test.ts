@@ -15,7 +15,11 @@ function fakeServer() {
     acks: events.map((e) => {
       const duplicate = received.has(e.localEventId);
       received.set(e.localEventId, e);
-      return { localEventId: e.localEventId, storage: duplicate ? 'duplicate' : 'created', verdict: 'ACCEPTED' };
+      return {
+        localEventId: e.localEventId,
+        storage: duplicate ? 'duplicate' : 'created',
+        verdict: 'ACCEPTED',
+      };
     }),
   });
   return { received, send };
@@ -33,7 +37,8 @@ describe('file de scans hors ligne', () => {
       throw new TypeError('Failed to fetch');
     };
     const engineOffline = new SyncEngine(store, offline);
-    for (let i = 0; i < 20; i++) await engineOffline.enqueue({ rawCode: `code-${i}`, checkpointId: CHECKPOINT }, 'Portail');
+    for (let i = 0; i < 20; i++)
+      await engineOffline.enqueue({ rawCode: `code-${i}`, checkpointId: CHECKPOINT }, 'Portail');
     await expect(engineOffline.flush()).rejects.toThrow();
     expect(await engineOffline.pendingCount()).toBe(20);
 
@@ -52,7 +57,8 @@ describe('file de scans hors ligne', () => {
       throw new TypeError('Network connection lost');
     };
     const broken = new SyncEngine(store, lostResponse);
-    for (let i = 0; i < 20; i++) await broken.enqueue({ rawCode: `code-${i}`, checkpointId: CHECKPOINT }, 'Portail');
+    for (let i = 0; i < 20; i++)
+      await broken.enqueue({ rawCode: `code-${i}`, checkpointId: CHECKPOINT }, 'Portail');
     await expect(broken.flush()).rejects.toThrow();
     expect(await broken.pendingCount()).toBe(20);
 
@@ -72,7 +78,13 @@ describe('file de scans hors ligne', () => {
     const engine = new SyncEngine(store, async ({ events }) => ({
       serverTime: 0,
       clockOffsetMs: 0,
-      acks: events.slice(0, 1).map((e) => ({ localEventId: e.localEventId, storage: 'created' as const, verdict: 'ACCEPTED' as const })),
+      acks: events
+        .slice(0, 1)
+        .map((e) => ({
+          localEventId: e.localEventId,
+          storage: 'created' as const,
+          verdict: 'ACCEPTED' as const,
+        })),
     }));
     await engine.enqueue({ rawCode: 'a', checkpointId: CHECKPOINT }, 'Portail');
     await engine.enqueue({ rawCode: 'b', checkpointId: CHECKPOINT }, 'Portail');
@@ -100,10 +112,18 @@ describe('file de scans hors ligne', () => {
     const engine = new SyncEngine(store, async ({ events }) => ({
       serverTime: 0,
       clockOffsetMs: 0,
-      acks: events.map((e) => ({ localEventId: e.localEventId, storage: 'created' as const, verdict: 'REFUSED' as const, reason: 'CODE_ALREADY_USED' as const })),
+      acks: events.map((e) => ({
+        localEventId: e.localEventId,
+        storage: 'created' as const,
+        verdict: 'REFUSED' as const,
+        reason: 'CODE_ALREADY_USED' as const,
+      })),
     }));
     const item = await engine.enqueue({ rawCode: 'a', checkpointId: CHECKPOINT }, 'Portail');
     await engine.flush();
-    expect(await store.results.get(item.localEventId)).toMatchObject({ status: 'refused', reason: 'CODE_ALREADY_USED' });
+    expect(await store.results.get(item.localEventId)).toMatchObject({
+      status: 'refused',
+      reason: 'CODE_ALREADY_USED',
+    });
   });
 });

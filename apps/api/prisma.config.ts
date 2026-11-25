@@ -14,6 +14,7 @@ export default defineConfig({
   },
   datasource: {
     // Valeur de repli uniquement pour `prisma generate` (qui n'ouvre aucune connexion).
-    url: process.env.DATABASE_URL ?? 'postgresql://placeholder:placeholder@localhost:5432/placeholder',
+    url:
+      process.env.DATABASE_URL ?? 'postgresql://placeholder:placeholder@localhost:5432/placeholder',
   },
 });

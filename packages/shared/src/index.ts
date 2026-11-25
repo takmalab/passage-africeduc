@@ -1,3 +1,3 @@
-export * from './badge';
-export * from './sync';
-export * from './time';
+export * from './badge.js';
+export * from './sync.js';
+export * from './time.js';

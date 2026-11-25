@@ -5,7 +5,15 @@ import { useAuth } from '../auth';
 
 export type NavItem = { to: string; label: string; icon: ReactNode; end?: boolean };
 
-export function Layout({ title, nav, children }: { title: string; nav?: NavItem[]; children: ReactNode }) {
+export function Layout({
+  title,
+  nav,
+  children,
+}: {
+  title: string;
+  nav?: NavItem[];
+  children: ReactNode;
+}) {
   const { user, logout } = useAuth();
   return (
     <div className="mx-auto flex min-h-dvh max-w-5xl flex-col">

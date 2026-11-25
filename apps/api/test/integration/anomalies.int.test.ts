@@ -12,7 +12,13 @@ import { localTime, scanEvent, seedWorld, tap, TZ } from './helpers.js';
 const DAY = '2026-11-24'; // un mardi
 const after = (h: number, m: number) => new Date(localTime(DAY, h, m));
 
-async function scanAt(w: Awaited<ReturnType<typeof seedWorld>>, studentIndex: number, checkpointId: string, time: number, counter: number) {
+async function scanAt(
+  w: Awaited<ReturnType<typeof seedWorld>>,
+  studentIndex: number,
+  checkpointId: string,
+  time: number,
+  counter: number,
+) {
   return ingestBatch(
     { id: w.agent.id, establishmentId: w.est.id },
     {
@@ -55,7 +61,9 @@ describe('détection automatique du passage manquant', () => {
   it('prépare un message neutre pour le parent, envoyé par le programme de fond', async () => {
     const w = await seedWorld();
     await runSchedulerTick(after(9, 0));
-    const messages = await prisma.outboundMessage.findMany({ where: { parentId: w.parentA.id, dayKey: dateFromKey(DAY) } });
+    const messages = await prisma.outboundMessage.findMany({
+      where: { parentId: w.parentA.id, dayKey: dateFromKey(DAY) },
+    });
     expect(messages).toHaveLength(1);
     expect(messages[0]!.status).toBe('SENT');
     expect(messages[0]!.body).toContain('Awa');
@@ -74,14 +82,29 @@ describe('détection automatique du passage manquant', () => {
   it("n'alerte pas un jour férié ni pour une absence justifiée", async () => {
     const w = await seedWorld();
     await prisma.dayException.create({
-      data: { establishmentId: w.est.id, studentId: w.students[0]!.id, date: dateFromKey(DAY), type: 'JUSTIFIED_ABSENCE', createdById: w.manager.id },
+      data: {
+        establishmentId: w.est.id,
+        studentId: w.students[0]!.id,
+        date: dateFromKey(DAY),
+        type: 'JUSTIFIED_ABSENCE',
+        createdById: w.manager.id,
+      },
     });
     await runSchedulerTick(after(9, 0));
-    expect(await prisma.anomaly.count({ where: { studentId: w.students[0]!.id, date: dateFromKey(DAY) } })).toBe(0);
+    expect(
+      await prisma.anomaly.count({
+        where: { studentId: w.students[0]!.id, date: dateFromKey(DAY) },
+      }),
+    ).toBe(0);
 
     await prisma.anomaly.deleteMany();
     await prisma.dayException.create({
-      data: { establishmentId: w.est.id, date: dateFromKey('2026-11-26'), type: 'HOLIDAY', createdById: w.manager.id },
+      data: {
+        establishmentId: w.est.id,
+        date: dateFromKey('2026-11-26'),
+        type: 'HOLIDAY',
+        createdById: w.manager.id,
+      },
     });
     await runSchedulerTick(new Date(localTime('2026-11-26', 18, 0)));
     expect(await prisma.anomaly.count({ where: { date: dateFromKey('2026-11-26') } })).toBe(0);
@@ -90,17 +113,25 @@ describe('détection automatique du passage manquant', () => {
   it('clôt automatiquement l’anomalie quand le scan hors ligne arrive en retard, et rectifie', async () => {
     const w = await seedWorld();
     await runSchedulerTick(after(9, 0));
-    const missed = await prisma.anomaly.findFirstOrThrow({ where: { studentId: w.students[0]!.id, date: dateFromKey(DAY), routeStep: { position: 1 } } });
+    const missed = await prisma.anomaly.findFirstOrThrow({
+      where: { studentId: w.students[0]!.id, date: dateFromKey(DAY), routeStep: { position: 1 } },
+    });
 
     // L'agent avait scanné Awa à 7 h 10 hors ligne, il synchronise à 9 h 30.
     await ingestBatch(
       { id: w.agent.id, establishmentId: w.est.id },
-      { deviceId: randomUUID(), deviceSentAt: localTime(DAY, 9, 30), events: [scanEvent(tap(w.students[0]!, 1), w.entry.id, localTime(DAY, 7, 10))] },
+      {
+        deviceId: randomUUID(),
+        deviceSentAt: localTime(DAY, 9, 30),
+        events: [scanEvent(tap(w.students[0]!, 1), w.entry.id, localTime(DAY, 7, 10))],
+      },
       localTime(DAY, 9, 30),
     );
     const after2 = await prisma.anomaly.findUniqueOrThrow({ where: { id: missed.id } });
     expect(after2.status).toBe('AUTO_RESOLVED');
-    const correction = await prisma.outboundMessage.findFirst({ where: { anomalyId: missed.id, kind: 'CORRECTION' } });
+    const correction = await prisma.outboundMessage.findFirst({
+      where: { anomalyId: missed.id, kind: 'CORRECTION' },
+    });
     expect(correction?.body).toContain('Rectification');
   });
 });
@@ -114,7 +145,12 @@ describe('anomalies à la réception du passage', () => {
     await runSchedulerTick(after(9, 0));
     expect(
       await prisma.anomaly.count({
-        where: { studentId: w.students[0]!.id, type: 'MISSED_CHECKPOINT', date: dateFromKey(DAY), routeStep: { position: 1 } },
+        where: {
+          studentId: w.students[0]!.id,
+          type: 'MISSED_CHECKPOINT',
+          date: dateFromKey(DAY),
+          routeStep: { position: 1 },
+        },
       }),
     ).toBe(0);
   });
@@ -148,13 +184,20 @@ describe('plafond de messages par élève et par jour', () => {
     for (let i = 0; i < env.NOTIFY_MAX_PER_STUDENT_PER_DAY + 1; i++) {
       await scanAt(w, 0, w.entry.id, localTime(DAY, 9, i * 5), i + 1);
     }
-    const messages = await prisma.outboundMessage.findMany({ where: { parentId: w.parentA.id }, orderBy: { createdAt: 'asc' } });
+    const messages = await prisma.outboundMessage.findMany({
+      where: { parentId: w.parentA.id },
+      orderBy: { createdAt: 'asc' },
+    });
     expect(messages).toHaveLength(env.NOTIFY_MAX_PER_STUDENT_PER_DAY + 1);
-    expect(messages.filter((m) => m.status === 'PENDING')).toHaveLength(env.NOTIFY_MAX_PER_STUDENT_PER_DAY);
+    expect(messages.filter((m) => m.status === 'PENDING')).toHaveLength(
+      env.NOTIFY_MAX_PER_STUDENT_PER_DAY,
+    );
     const last = messages.at(-1)!;
     expect(last.status).toBe('SUPPRESSED');
     expect(last.suppressionReason).toBe(DAILY_CAP_REASON);
     // L'anomalie, elle, est bien enregistrée.
-    expect(await prisma.anomaly.count({ where: { studentId: w.students[0]!.id } })).toBe(env.NOTIFY_MAX_PER_STUDENT_PER_DAY + 1);
+    expect(await prisma.anomaly.count({ where: { studentId: w.students[0]!.id } })).toBe(
+      env.NOTIFY_MAX_PER_STUDENT_PER_DAY + 1,
+    );
   });
 });

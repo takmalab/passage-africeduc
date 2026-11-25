@@ -20,7 +20,17 @@ type Usage = {
   spentTodayUsd: number;
   model: string;
   keyConfigured: boolean;
-  calls: { id: string; createdAt: string; status: string; attempt: number; inputTokens: number; outputTokens: number; estimatedCostUsd: number; durationMs: number; errorMessage: string | null }[];
+  calls: {
+    id: string;
+    createdAt: string;
+    status: string;
+    attempt: number;
+    inputTokens: number;
+    outputTokens: number;
+    estimatedCostUsd: number;
+    durationMs: number;
+    errorMessage: string | null;
+  }[];
 };
 
 const FACT_LABELS: Record<string, string> = {
@@ -54,7 +64,10 @@ export function SummaryPage() {
             setLoading(true);
             setError(null);
             try {
-              const res = await post<{ summary: Summary }>('/manager/summaries', { classroomId, dateKey: date });
+              const res = await post<{ summary: Summary }>('/manager/summaries', {
+                classroomId,
+                dateKey: date,
+              });
               setSummary(res.summary);
               usage.reload();
             } catch (err) {
@@ -64,30 +77,63 @@ export function SummaryPage() {
             }
           }}
         >
-          <select className={inputClass} value={classroomId} onChange={(e) => setClassroomId(e.target.value)} required aria-label="Classe">
+          <select
+            className={inputClass}
+            value={classroomId}
+            onChange={(e) => setClassroomId(e.target.value)}
+            required
+            aria-label="Classe"
+          >
             <option value="">Classe</option>
-            {classrooms.data?.classrooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {classrooms.data?.classrooms.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
           </select>
-          <input type="date" className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} aria-label="Date" required />
-          <Button type="submit" loading={loading}><Sparkles className="size-4" aria-hidden />Générer</Button>
+          <input
+            type="date"
+            className={inputClass}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            aria-label="Date"
+            required
+          />
+          <Button type="submit" loading={loading}>
+            <Sparkles className="size-4" aria-hidden />
+            Générer
+          </Button>
         </form>
-        <div className="mt-3"><ErrorBox error={error} /></div>
+        <div className="mt-3">
+          <ErrorBox error={error} />
+        </div>
 
         {summary && (
           <div className="mt-4 space-y-3">
             <p className="rounded-lg bg-slate-50 p-3 text-base leading-relaxed">{summary.text}</p>
             <div className="flex flex-wrap gap-2">
-              <Pill tone={summary.origin === 'TEMPLATE' ? 'warn' : 'good'}>{ORIGIN_LABELS[summary.origin]}</Pill>
+              <Pill tone={summary.origin === 'TEMPLATE' ? 'warn' : 'good'}>
+                {ORIGIN_LABELS[summary.origin]}
+              </Pill>
               {summary.fromCache && <Pill tone="info">Cache : non facturé</Pill>}
               {summary.model && <Pill>{summary.model}</Pill>}
             </div>
             {summary.notice && <p className="text-sm text-amber-800">{summary.notice}</p>}
             <details className="text-sm">
-              <summary className="cursor-pointer text-slate-600">Chiffres calculés par le code (seule source des nombres)</summary>
+              <summary className="cursor-pointer text-slate-600">
+                Chiffres calculés par le code (seule source des nombres)
+              </summary>
               <table className="mt-2 text-left">
                 <tbody>
                   {Object.entries(FACT_LABELS).map(([k, label]) => (
-                    <tr key={k}><td className="pr-4 text-slate-500">{label}</td><td>{Array.isArray(summary.facts[k]) ? (summary.facts[k] as string[]).join(', ') || 'aucune' : String(summary.facts[k])}</td></tr>
+                    <tr key={k}>
+                      <td className="pr-4 text-slate-500">{label}</td>
+                      <td>
+                        {Array.isArray(summary.facts[k])
+                          ? (summary.facts[k] as string[]).join(', ') || 'aucune'
+                          : String(summary.facts[k])}
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -97,24 +143,42 @@ export function SummaryPage() {
       </Card>
 
       <Card title="Consommation IA">
-        {!usage.data ? <Spinner /> : (
+        {!usage.data ? (
+          <Spinner />
+        ) : (
           <div className="space-y-3 text-sm">
             <div className="flex flex-wrap gap-2">
-              <Pill tone={usage.data.keyConfigured ? 'good' : 'warn'}>{usage.data.keyConfigured ? `Clé configurée (${usage.data.model})` : 'Aucune clé : mode dégradé'}</Pill>
+              <Pill tone={usage.data.keyConfigured ? 'good' : 'warn'}>
+                {usage.data.keyConfigured
+                  ? `Clé configurée (${usage.data.model})`
+                  : 'Aucune clé : mode dégradé'}
+              </Pill>
               <Pill tone={usage.data.spentTodayUsd >= usage.data.budgetUsd ? 'bad' : 'neutral'}>
-                Dépense du jour : {usage.data.spentTodayUsd.toFixed(5)} $ / {usage.data.budgetUsd.toFixed(2)} $
+                Dépense du jour : {usage.data.spentTodayUsd.toFixed(5)} $ /{' '}
+                {usage.data.budgetUsd.toFixed(2)} $
               </Pill>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="text-xs text-slate-500"><tr><th className="pr-3">Date</th><th className="pr-3">Statut</th><th className="pr-3">Essai</th><th className="pr-3">Tokens</th><th className="pr-3">Coût</th><th>Durée</th></tr></thead>
+                <thead className="text-xs text-slate-500">
+                  <tr>
+                    <th className="pr-3">Date</th>
+                    <th className="pr-3">Statut</th>
+                    <th className="pr-3">Essai</th>
+                    <th className="pr-3">Tokens</th>
+                    <th className="pr-3">Coût</th>
+                    <th>Durée</th>
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-slate-100">
                   {usage.data.calls.map((c) => (
                     <tr key={c.id} title={c.errorMessage ?? ''}>
                       <td className="py-1 pr-3">{fmtDateTime(c.createdAt)}</td>
                       <td className="pr-3">{c.status}</td>
                       <td className="pr-3">{c.attempt}</td>
-                      <td className="pr-3">{c.inputTokens} / {c.outputTokens}</td>
+                      <td className="pr-3">
+                        {c.inputTokens} / {c.outputTokens}
+                      </td>
                       <td className="pr-3">{c.estimatedCostUsd.toFixed(6)} $</td>
                       <td>{c.durationMs} ms</td>
                     </tr>

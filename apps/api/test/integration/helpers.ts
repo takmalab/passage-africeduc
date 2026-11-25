@@ -18,11 +18,20 @@ export function client() {
     agent,
     get: (url: string) => agent.get(url),
     post: (url: string, body?: object) =>
-      agent.post(url).set('X-Requested-With', 'passage').send(body ?? {}),
+      agent
+        .post(url)
+        .set('X-Requested-With', 'passage')
+        .send(body ?? {}),
     patch: (url: string, body?: object) =>
-      agent.patch(url).set('X-Requested-With', 'passage').send(body ?? {}),
+      agent
+        .patch(url)
+        .set('X-Requested-With', 'passage')
+        .send(body ?? {}),
     put: (url: string, body?: object) =>
-      agent.put(url).set('X-Requested-With', 'passage').send(body ?? {}),
+      agent
+        .put(url)
+        .set('X-Requested-With', 'passage')
+        .send(body ?? {}),
   };
 }
 
@@ -54,7 +63,9 @@ export async function seedWorld(suffix = '') {
   const parentA = await mk('parent.a', 'PARENT', false);
   const parentB = await mk('parent.b', 'PARENT', false);
 
-  const classroom = await prisma.classroom.create({ data: { name: '3e A', establishmentId: est.id } });
+  const classroom = await prisma.classroom.create({
+    data: { name: '3e A', establishmentId: est.id },
+  });
   const entry = await prisma.checkpoint.create({
     data: { label: 'Portail entrée', type: 'GATE', establishmentId: est.id },
   });
@@ -76,8 +87,20 @@ export async function seedWorld(suffix = '') {
         name: 'Portail',
         steps: {
           create: [
-            { checkpointId: entry.id, position: 1, startMinute: 420, endMinute: 465, days: [1, 2, 3, 4, 5, 6, 7] },
-            { checkpointId: exit.id, position: 2, startMinute: 930, endMinute: 975, days: [1, 2, 3, 4, 5, 6, 7] },
+            {
+              checkpointId: entry.id,
+              position: 1,
+              startMinute: 420,
+              endMinute: 465,
+              days: [1, 2, 3, 4, 5, 6, 7],
+            },
+            {
+              checkpointId: exit.id,
+              position: 2,
+              startMinute: 930,
+              endMinute: 975,
+              days: [1, 2, 3, 4, 5, 6, 7],
+            },
           ],
         },
       },
@@ -109,8 +132,16 @@ export async function createCard(establishmentId: string, studentId: string) {
 }
 
 /** Code tel qu'une vraie puce le produirait pour ce compteur. */
-export function tap(card: { establishmentId: string; badgeId: string; uid: string }, counter: number) {
-  const t = simulateTap(nfcMetaKey(card.establishmentId), nfcMacKey(card.badgeId), card.uid, counter);
+export function tap(
+  card: { establishmentId: string; badgeId: string; uid: string },
+  counter: number,
+) {
+  const t = simulateTap(
+    nfcMetaKey(card.establishmentId),
+    nfcMacKey(card.badgeId),
+    card.uid,
+    counter,
+  );
   return formatNfcCode(t.piccData, t.mac);
 }
 

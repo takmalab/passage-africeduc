@@ -48,7 +48,7 @@ export async function issueBadge(
   if (kind === 'PRINTED') {
     const est = await prisma.establishment.findUniqueOrThrow({ where: { id: establishmentId } });
     if (!est.allowPrintedBadges) {
-      throw forbidden("Les cartes QR imprimées sont désactivées pour cet établissement.");
+      throw forbidden('Les cartes QR imprimées sont désactivées pour cet établissement.');
     }
   }
 
@@ -57,7 +57,9 @@ export async function issueBadge(
   const badge = await prisma.$transaction(async (tx) => {
     const live = await tx.badge.findFirst({ where: { studentId, status: { in: LIVE } } });
     if (live && !replaceReason) {
-      throw conflict('Cet élève a déjà un badge. Indiquez s’il est perdu ou révoqué pour le remplacer.');
+      throw conflict(
+        'Cet élève a déjà un badge. Indiquez s’il est perdu ou révoqué pour le remplacer.',
+      );
     }
     if (live) {
       await tx.badge.update({

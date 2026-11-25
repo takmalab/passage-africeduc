@@ -26,18 +26,28 @@ export function StudentsPage() {
     <>
       <Card title="Élèves">
         <ErrorBox error={students.error} />
-        {students.loading ? <Spinner /> : students.data?.students.length === 0 ? <Empty>Aucun élève.</Empty> : (
+        {students.loading ? (
+          <Spinner />
+        ) : students.data?.students.length === 0 ? (
+          <Empty>Aucun élève.</Empty>
+        ) : (
           <ul className="divide-y divide-slate-100">
             {students.data?.students.map((s) => (
               <li key={s.id}>
-                <Link to={`/responsable/eleves/${s.id}`} className="flex items-center gap-3 py-2.5 text-sm hover:bg-slate-50">
+                <Link
+                  to={`/responsable/eleves/${s.id}`}
+                  className="flex items-center gap-3 py-2.5 text-sm hover:bg-slate-50"
+                >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium">{s.firstName} {s.lastName}</p>
+                    <p className="font-medium">
+                      {s.firstName} {s.lastName}
+                    </p>
                     <p className="text-xs text-slate-500">{s.classroom.name}</p>
                   </div>
                   {s.badge ? (
                     <Pill tone={s.badge.status === 'ACTIVE' ? 'good' : 'warn'}>
-                      {BADGE_KIND[s.badge.kind]} · {BADGE_STATUS[s.badge.status]}{s.badge.simulated ? ' (simulée)' : ''}
+                      {BADGE_KIND[s.badge.kind]} · {BADGE_STATUS[s.badge.status]}
+                      {s.badge.simulated ? ' (simulée)' : ''}
                     </Pill>
                   ) : (
                     <Pill tone="bad">Sans badge</Pill>
@@ -68,15 +78,46 @@ export function StudentsPage() {
             }
           }}
         >
-          <input className={inputClass} placeholder="Prénom" aria-label="Prénom" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} required maxLength={80} />
-          <input className={inputClass} placeholder="Nom" aria-label="Nom" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} required maxLength={80} />
-          <select className={inputClass} aria-label="Classe" value={form.classroomId} onChange={(e) => setForm({ ...form, classroomId: e.target.value })} required>
+          <input
+            className={inputClass}
+            placeholder="Prénom"
+            aria-label="Prénom"
+            value={form.firstName}
+            onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+            required
+            maxLength={80}
+          />
+          <input
+            className={inputClass}
+            placeholder="Nom"
+            aria-label="Nom"
+            value={form.lastName}
+            onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+            required
+            maxLength={80}
+          />
+          <select
+            className={inputClass}
+            aria-label="Classe"
+            value={form.classroomId}
+            onChange={(e) => setForm({ ...form, classroomId: e.target.value })}
+            required
+          >
             <option value="">Classe</option>
-            {classrooms.data?.classrooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {classrooms.data?.classrooms.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
           </select>
-          <Button type="submit" loading={saving}><UserPlus className="size-4" aria-hidden />Ajouter</Button>
+          <Button type="submit" loading={saving}>
+            <UserPlus className="size-4" aria-hidden />
+            Ajouter
+          </Button>
         </form>
-        <div className="mt-2"><ErrorBox error={error} /></div>
+        <div className="mt-2">
+          <ErrorBox error={error} />
+        </div>
       </Card>
     </>
   );

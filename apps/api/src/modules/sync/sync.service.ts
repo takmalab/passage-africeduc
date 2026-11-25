@@ -58,7 +58,9 @@ export async function ingestBatch(
 
   for (const event of batch.events) {
     const previous = await prisma.passage.findUnique({
-      where: { deviceId_localEventId: { deviceId: batch.deviceId, localEventId: event.localEventId } },
+      where: {
+        deviceId_localEventId: { deviceId: batch.deviceId, localEventId: event.localEventId },
+      },
       include: { student: { select: { firstName: true } } },
     });
     if (previous) {
@@ -66,7 +68,11 @@ export async function ingestBatch(
       continue;
     }
     if (!checkpoints.has(event.checkpointId)) {
-      acks.push({ localEventId: event.localEventId, storage: 'invalid', reason: 'UNKNOWN_CHECKPOINT' });
+      acks.push({
+        localEventId: event.localEventId,
+        storage: 'invalid',
+        reason: 'UNKNOWN_CHECKPOINT',
+      });
       continue;
     }
 
@@ -81,6 +87,7 @@ export async function ingestBatch(
           establishmentId: agent.establishmentId,
           allowPrintedBadges: establishment.allowPrintedBadges,
           effectiveTime: clock.effectiveTime,
+          checkpointId: event.checkpointId,
         });
 
         // Heure incohérente : on garde la trace, sans consommer le compteur ni compter le passage.
@@ -166,7 +173,8 @@ function ackFrom(
 ): EventAck {
   const ack: EventAck = { localEventId, storage, verdict: passage.verdict };
   if (passage.refusalReason) ack.reason = passage.refusalReason as RefusalReason;
-  if (passage.verdict === 'ACCEPTED' && passage.student) ack.studentFirstName = passage.student.firstName;
+  if (passage.verdict === 'ACCEPTED' && passage.student)
+    ack.studentFirstName = passage.student.firstName;
   return ack;
 }
 

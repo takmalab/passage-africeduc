@@ -11,6 +11,8 @@ export function useApi<T>(path: string | null) {
   useEffect(() => {
     if (!path) return;
     let cancelled = false;
+    // Indicateur de chargement synchronisé avec la requête lancée juste après.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     get<T>(path)
       .then((d) => !cancelled && (setData(d), setError(null)))

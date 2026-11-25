@@ -30,7 +30,8 @@ const GOOD = JSON.stringify({
     'Classe : {present} présent(s) sur {enrolled}, {late} retard(s), {outOfWindow} passage(s) hors plage ({outOfWindowTimes}) et {missed} passage(s) manquant(s).',
 });
 const INVENTS_NUMBER = JSON.stringify({
-  template: 'Classe : 19 présents sur {enrolled}, {late} retard(s), {outOfWindow} hors plage, {missed} manquant(s), {present}.',
+  template:
+    'Classe : 19 présents sur {enrolled}, {late} retard(s), {outOfWindow} hors plage, {missed} manquant(s), {present}.',
 });
 
 /** Journée type : Awa et Kevin à l'heure, Brenda en retard, Kevin sort à 14 h 10, Awa ne sort pas. */
@@ -39,7 +40,11 @@ async function day() {
   const scan = (i: number, cp: string, h: number, m: number, counter: number) =>
     ingestBatch(
       { id: w.agent.id, establishmentId: w.est.id },
-      { deviceId: randomUUID(), deviceSentAt: localTime(DAY, h, m), events: [scanEvent(tap(w.students[i]!, counter), cp, localTime(DAY, h, m))] },
+      {
+        deviceId: randomUUID(),
+        deviceSentAt: localTime(DAY, h, m),
+        events: [scanEvent(tap(w.students[i]!, counter), cp, localTime(DAY, h, m))],
+      },
       localTime(DAY, h, m) + 1000,
     );
   await scan(0, w.entry.id, 7, 5, 1);
@@ -60,11 +65,14 @@ async function independentCounts(classroomId: string) {
       AND (p."effectiveTime" AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Douala')::date = ${DAY}::date`;
   const [enrolled] = await prisma.$queryRaw<{ n: bigint }[]>`
     SELECT COUNT(*) AS n FROM "Student" WHERE "classroomId" = ${classroomId}::uuid AND status = 'ACTIVE'`;
-  const missed = await prisma.anomaly.count({ where: { type: 'MISSED_CHECKPOINT', date: dateFromKey(DAY), status: { not: 'AUTO_RESOLVED' } } });
+  const missed = await prisma.anomaly.count({
+    where: { type: 'MISSED_CHECKPOINT', date: dateFromKey(DAY), status: { not: 'AUTO_RESOLVED' } },
+  });
   return { present: Number(present!.n), enrolled: Number(enrolled!.n), missed };
 }
 
-const numbersIn = (text: string) => (text.match(/\d{1,2}:\d{2}|\d+/g) ?? []).filter((n) => !n.includes(':'));
+const numbersIn = (text: string) =>
+  (text.match(/\d{1,2}:\d{2}|\d+/g) ?? []).filter((n) => !n.includes(':'));
 
 describe('synthèse IA : aucune donnée inventée', () => {
   it('les chiffres de la synthèse sont exactement ceux de la base (modèle valide)', async () => {
@@ -75,7 +83,13 @@ describe('synthèse IA : aucune donnée inventée', () => {
     expect(s.origin).toBe('MODEL');
 
     const db = await independentCounts(w.classroom.id);
-    expect(s.facts).toMatchObject({ present: db.present, enrolled: db.enrolled, late: 1, outOfWindow: 1, missed: db.missed });
+    expect(s.facts).toMatchObject({
+      present: db.present,
+      enrolled: db.enrolled,
+      late: 1,
+      outOfWindow: 1,
+      missed: db.missed,
+    });
     expect(s.facts.outOfWindowTimes).toEqual(['14:10']);
     // Chaque nombre affiché provient des chiffres calculés, dans l'ordre du gabarit.
     expect(numbersIn(s.text)).toEqual([db.present, db.enrolled, 1, 1, db.missed].map(String));

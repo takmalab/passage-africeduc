@@ -1,5 +1,15 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle2, CloudOff, Keyboard, Nfc, QrCode, RefreshCw, Wifi, XCircle, Clock } from 'lucide-react';
+import {
+  CheckCircle2,
+  CloudOff,
+  Keyboard,
+  Nfc,
+  QrCode,
+  RefreshCw,
+  Wifi,
+  XCircle,
+  Clock,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SyncResponse } from '@passage/shared';
 import { ApiError, get, NetworkError, post } from '../api';
@@ -33,7 +43,11 @@ export function AgentPage() {
   const [flash, setFlash] = useState<string | null>(null);
 
   const pending = useLiveQuery(() => db.queue.count(), [], 0);
-  const results = useLiveQuery(() => db.results.orderBy('at').reverse().limit(15).toArray(), [], []);
+  const results = useLiveQuery(
+    () => db.results.orderBy('at').reverse().limit(15).toArray(),
+    [],
+    [],
+  );
 
   // Points de contrôle : depuis le serveur si possible, sinon depuis le cache local.
   useEffect(() => {
@@ -42,7 +56,9 @@ export function AgentPage() {
       setCheckpoints(cached);
       setCheckpointId((await getMeta<string>('checkpointId')) ?? cached[0]?.id ?? '');
       try {
-        const { checkpoints: fresh } = await get<{ checkpoints: Checkpoint[] }>('/agent/checkpoints');
+        const { checkpoints: fresh } = await get<{ checkpoints: Checkpoint[] }>(
+          '/agent/checkpoints',
+        );
         setCheckpoints(fresh);
         await setMeta('checkpoints', fresh);
         setCheckpointId((id) => id || fresh[0]?.id || '');
@@ -52,7 +68,10 @@ export function AgentPage() {
     })();
   }, []);
 
-  const label = useMemo(() => checkpoints.find((c) => c.id === checkpointId)?.label ?? '', [checkpoints, checkpointId]);
+  const label = useMemo(
+    () => checkpoints.find((c) => c.id === checkpointId)?.label ?? '',
+    [checkpoints, checkpointId],
+  );
 
   const sync = useCallback(async () => {
     if (!navigator.onLine) return;
@@ -63,7 +82,9 @@ export function AgentPage() {
       setSyncError(null);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setSyncError('Session expirée : reconnectez-vous pour envoyer les scans en attente. Ils restent sur ce téléphone.');
+        setSyncError(
+          'Session expirée : reconnectez-vous pour envoyer les scans en attente. Ils restent sur ce téléphone.',
+        );
       } else if (!(err instanceof NetworkError)) {
         setSyncError(err instanceof Error ? err.message : 'Échec de la synchronisation.');
       }
@@ -74,6 +95,8 @@ export function AgentPage() {
 
   // Synchronisation automatique : au retour du réseau, et toutes les 15 secondes.
   useEffect(() => {
+    // Abonnement à un système externe (réseau) : premier envoi immédiat voulu.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void sync();
     window.addEventListener('online', sync);
     const timer = setInterval(sync, 15_000);
@@ -99,16 +122,28 @@ export function AgentPage() {
     <Layout title="Agent de portail">
       <div className="flex flex-wrap items-center gap-2">
         {online ? (
-          <Pill tone="good"><Wifi className="size-3.5" aria-hidden />En ligne</Pill>
+          <Pill tone="good">
+            <Wifi className="size-3.5" aria-hidden />
+            En ligne
+          </Pill>
         ) : (
-          <Pill tone="warn"><CloudOff className="size-3.5" aria-hidden />Hors ligne : les scans sont gardés</Pill>
+          <Pill tone="warn">
+            <CloudOff className="size-3.5" aria-hidden />
+            Hors ligne : les scans sont gardés
+          </Pill>
         )}
         <Pill tone={pending ? 'info' : 'neutral'}>
           <Clock className="size-3.5" aria-hidden />
           {pending} en attente d’envoi
         </Pill>
         {authOffline && <Pill tone="warn">Session non vérifiée (hors ligne)</Pill>}
-        <Button variant="secondary" className="ml-auto !py-1.5" onClick={() => void sync()} loading={syncing} disabled={!online}>
+        <Button
+          variant="secondary"
+          className="ml-auto !py-1.5"
+          onClick={() => void sync()}
+          loading={syncing}
+          disabled={!online}
+        >
           <RefreshCw className="size-4" aria-hidden />
           Synchroniser
         </Button>
@@ -116,7 +151,9 @@ export function AgentPage() {
       <ErrorBox error={syncError} />
 
       <Card>
-        <label className="mb-1 block text-sm font-medium" htmlFor="checkpoint">Point de contrôle</label>
+        <label className="mb-1 block text-sm font-medium" htmlFor="checkpoint">
+          Point de contrôle
+        </label>
         <select
           id="checkpoint"
           className={inputClass}
@@ -126,16 +163,35 @@ export function AgentPage() {
             void setMeta('checkpointId', e.target.value);
           }}
         >
-          {checkpoints.length === 0 && <option value="">Aucun point en cache : connectez-vous une fois en ligne</option>}
+          {checkpoints.length === 0 && (
+            <option value="">Aucun point en cache : connectez-vous une fois en ligne</option>
+          )}
           {checkpoints.map((c) => (
-            <option key={c.id} value={c.id}>{c.label}</option>
+            <option key={c.id} value={c.id}>
+              {c.label}
+            </option>
           ))}
         </select>
 
         <div className="mt-4 grid grid-cols-3 gap-2" role="tablist" aria-label="Mode de lecture">
-          <ModeButton active={mode === 'nfc'} onClick={() => setMode('nfc')} icon={<Nfc className="size-4" aria-hidden />} label="Carte NFC" />
-          <ModeButton active={mode === 'qr'} onClick={() => setMode('qr')} icon={<QrCode className="size-4" aria-hidden />} label="QR" />
-          <ModeButton active={mode === 'manual'} onClick={() => setMode('manual')} icon={<Keyboard className="size-4" aria-hidden />} label="Saisie" />
+          <ModeButton
+            active={mode === 'nfc'}
+            onClick={() => setMode('nfc')}
+            icon={<Nfc className="size-4" aria-hidden />}
+            label="Carte NFC"
+          />
+          <ModeButton
+            active={mode === 'qr'}
+            onClick={() => setMode('qr')}
+            icon={<QrCode className="size-4" aria-hidden />}
+            label="QR"
+          />
+          <ModeButton
+            active={mode === 'manual'}
+            onClick={() => setMode('manual')}
+            icon={<Keyboard className="size-4" aria-hidden />}
+            label="Saisie"
+          />
         </div>
 
         <div className="mt-4">
@@ -143,16 +199,29 @@ export function AgentPage() {
           {mode === 'qr' && checkpointId && <QrCamera onCode={onCode} />}
           {mode === 'manual' && <ManualPanel onCode={onCode} disabled={!checkpointId} />}
         </div>
-        {flash && <p className="mt-3 rounded-lg bg-teal-50 p-2 text-center text-sm font-medium text-teal-800" role="status">{flash}</p>}
+        {flash && (
+          <p
+            className="mt-3 rounded-lg bg-teal-50 p-2 text-center text-sm font-medium text-teal-800"
+            role="status"
+          >
+            {flash}
+          </p>
+        )}
       </Card>
 
       <Card title="Derniers passages">
         <ul className="divide-y divide-slate-100">
           {results?.map((r) => (
             <li key={r.localEventId} className="flex items-center gap-3 py-2 text-sm">
-              {r.status === 'accepted' && <CheckCircle2 className="size-5 text-emerald-600" aria-label="Accepté" />}
-              {(r.status === 'refused' || r.status === 'invalid') && <XCircle className="size-5 text-red-600" aria-label="Refusé" />}
-              {r.status === 'pending' && <Clock className="size-5 text-sky-600" aria-label="En attente" />}
+              {r.status === 'accepted' && (
+                <CheckCircle2 className="size-5 text-emerald-600" aria-label="Accepté" />
+              )}
+              {(r.status === 'refused' || r.status === 'invalid') && (
+                <XCircle className="size-5 text-red-600" aria-label="Refusé" />
+              )}
+              {r.status === 'pending' && (
+                <Clock className="size-5 text-sky-600" aria-label="En attente" />
+              )}
               <div className="min-w-0 flex-1">
                 <p className="font-medium">
                   {r.status === 'accepted' && (r.firstName ?? 'Accepté')}
@@ -166,14 +235,26 @@ export function AgentPage() {
               </div>
             </li>
           ))}
-          {results?.length === 0 && <li className="py-4 text-center text-sm text-slate-500">Aucun scan pour l’instant.</li>}
+          {results?.length === 0 && (
+            <li className="py-4 text-center text-sm text-slate-500">Aucun scan pour l’instant.</li>
+          )}
         </ul>
       </Card>
     </Layout>
   );
 }
 
-function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+function ModeButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
   return (
     <button
       role="tab"
@@ -197,8 +278,8 @@ function NfcPanel({ onCode, disabled }: { onCode: (c: string) => void; disabled:
   if (!isNfcSupported()) {
     return (
       <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-        Ce navigateur ne lit pas le NFC. Il faut Chrome sur un téléphone Android avec NFC, en HTTPS. Utilisez le mode QR pour
-        le simulateur de carte.
+        Ce navigateur ne lit pas le NFC. Il faut Chrome sur un téléphone Android avec NFC, en HTTPS.
+        Utilisez le mode QR pour le simulateur de carte.
       </p>
     );
   }
@@ -251,7 +332,9 @@ function ManualPanel({ onCode, disabled }: { onCode: (c: string) => void; disabl
         aria-label="Code du badge"
         autoComplete="off"
       />
-      <Button type="submit" disabled={disabled || !value.trim()}>Valider</Button>
+      <Button type="submit" disabled={disabled || !value.trim()}>
+        Valider
+      </Button>
     </form>
   );
 }

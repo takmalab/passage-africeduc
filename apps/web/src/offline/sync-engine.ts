@@ -63,7 +63,10 @@ export class SyncEngine {
     const deviceId = await getDeviceId(this.store);
     let confirmed = 0;
     for (;;) {
-      const batch = await this.store.queue.orderBy('deviceLocalTime').limit(MAX_EVENTS_PER_BATCH).toArray();
+      const batch = await this.store.queue
+        .orderBy('deviceLocalTime')
+        .limit(MAX_EVENTS_PER_BATCH)
+        .toArray();
       if (batch.length === 0) return confirmed;
 
       // En cas d'erreur réseau, l'exception remonte et la file reste intacte.
@@ -73,7 +76,11 @@ export class SyncEngine {
       await this.store.transaction('rw', this.store.queue, this.store.results, async () => {
         for (const ack of response.acks) {
           const status: ScanResult['status'] =
-            ack.storage === 'invalid' ? 'invalid' : ack.verdict === 'ACCEPTED' ? 'accepted' : 'refused';
+            ack.storage === 'invalid'
+              ? 'invalid'
+              : ack.verdict === 'ACCEPTED'
+                ? 'accepted'
+                : 'refused';
           await this.store.results.update(ack.localEventId, {
             status,
             firstName: ack.studentFirstName,
@@ -91,7 +98,10 @@ export class SyncEngine {
   async trimResults(keep = 50) {
     const count = await this.store.results.count();
     if (count <= keep) return;
-    const old = await this.store.results.orderBy('at').limit(count - keep).primaryKeys();
+    const old = await this.store.results
+      .orderBy('at')
+      .limit(count - keep)
+      .primaryKeys();
     await this.store.results.bulkDelete(old);
   }
 }

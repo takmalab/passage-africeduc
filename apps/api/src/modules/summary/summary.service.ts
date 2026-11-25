@@ -1,6 +1,11 @@
 import { formatDateKeyFr } from '@passage/shared';
 import { env } from '../../config/env.js';
-import { prisma, type AiCallStatus, type FallbackReason, type SummaryOrigin } from '../../db/prisma.js';
+import {
+  prisma,
+  type AiCallStatus,
+  type FallbackReason,
+  type SummaryOrigin,
+} from '../../db/prisma.js';
 import { canonicalJson, sha256Hex } from '../../lib/crypto.js';
 import { notFound } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
@@ -133,7 +138,13 @@ export async function generateSummary(
   });
   if (cached) {
     await logCall(model, cacheKey, 0, 'CACHE_HIT');
-    return save(cached.text, cached.origin, null, true, 'Résultat réutilisé (cache) : aucun appel facturé.');
+    return save(
+      cached.text,
+      cached.origin,
+      null,
+      true,
+      'Résultat réutilisé (cache) : aucun appel facturé.',
+    );
   }
 
   // Plafond de coût : on bloque si le budget du jour est atteint, ou s'il le serait par cet appel.
@@ -211,7 +222,13 @@ async function logCall(
   cacheKey: string,
   attempt: number,
   status: AiCallStatus,
-  extra: { inputTokens?: number; outputTokens?: number; cost?: number; durationMs?: number; error?: string } = {},
+  extra: {
+    inputTokens?: number;
+    outputTokens?: number;
+    cost?: number;
+    durationMs?: number;
+    error?: string;
+  } = {},
 ) {
   await prisma.aiCall.create({
     data: {

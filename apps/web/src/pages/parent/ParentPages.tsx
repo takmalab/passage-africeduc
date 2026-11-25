@@ -10,8 +10,17 @@ export function ParentLayout() {
     <Layout
       title="Espace parent"
       nav={[
-        { to: '/parent', label: 'Mes enfants', icon: <Users className="size-4" aria-hidden />, end: true },
-        { to: '/parent/messages', label: 'Messages', icon: <MessageSquare className="size-4" aria-hidden /> },
+        {
+          to: '/parent',
+          label: 'Mes enfants',
+          icon: <Users className="size-4" aria-hidden />,
+          end: true,
+        },
+        {
+          to: '/parent/messages',
+          label: 'Messages',
+          icon: <MessageSquare className="size-4" aria-hidden />,
+        },
       ]}
     >
       <Outlet />
@@ -26,12 +35,21 @@ export function ChildrenPage() {
   return (
     <Card title="Mes enfants">
       <ErrorBox error={error} />
-      {loading ? <Spinner /> : data?.children.length === 0 ? <Empty>Aucun enfant rattaché à votre compte.</Empty> : (
+      {loading ? (
+        <Spinner />
+      ) : data?.children.length === 0 ? (
+        <Empty>Aucun enfant rattaché à votre compte.</Empty>
+      ) : (
         <ul className="divide-y divide-slate-100">
           {data?.children.map((c) => (
             <li key={c.id}>
-              <Link to={`/parent/enfants/${c.id}`} className="flex items-center gap-2 py-3 text-sm hover:bg-slate-50">
-                <span className="flex-1 font-medium">{c.firstName} {c.lastName}</span>
+              <Link
+                to={`/parent/enfants/${c.id}`}
+                className="flex items-center gap-2 py-3 text-sm hover:bg-slate-50"
+              >
+                <span className="flex-1 font-medium">
+                  {c.firstName} {c.lastName}
+                </span>
                 <span className="text-slate-500">{c.classroom.name}</span>
                 <ChevronRight className="size-4 text-slate-400" aria-hidden />
               </Link>
@@ -55,15 +73,22 @@ export function ChildPage() {
   if (loading) return <Spinner />;
   return (
     <>
-      <Link to="/parent" className="inline-flex items-center gap-1 text-sm text-teal-800"><ArrowLeft className="size-4" aria-hidden />Mes enfants</Link>
+      <Link to="/parent" className="inline-flex items-center gap-1 text-sm text-teal-800">
+        <ArrowLeft className="size-4" aria-hidden />
+        Mes enfants
+      </Link>
       <ErrorBox error={error} />
       {data && (
         <>
           <Card title={`${data.child.firstName} ${data.child.lastName}`}>
-            <p className="text-sm text-slate-600">{data.child.classroom.name} · 14 derniers jours</p>
+            <p className="text-sm text-slate-600">
+              {data.child.classroom.name} · 14 derniers jours
+            </p>
           </Card>
           <Card title="Anomalies">
-            {data.anomalies.length === 0 ? <Empty>Aucune anomalie.</Empty> : (
+            {data.anomalies.length === 0 ? (
+              <Empty>Aucune anomalie.</Empty>
+            ) : (
               <ul className="divide-y divide-slate-100">
                 {data.anomalies.map((a) => (
                   <li key={a.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
@@ -76,7 +101,9 @@ export function ChildPage() {
             )}
           </Card>
           <Card title="Passages">
-            {data.passages.length === 0 ? <Empty>Aucun passage.</Empty> : (
+            {data.passages.length === 0 ? (
+              <Empty>Aucun passage.</Empty>
+            ) : (
               <ul className="divide-y divide-slate-100">
                 {data.passages.map((p) => (
                   <li key={p.id} className="flex justify-between py-2 text-sm">
@@ -94,15 +121,24 @@ export function ChildPage() {
 }
 
 export function MessagesPage() {
-  const { data, error, loading } = useApi<{ messages: { id: string; body: string; kind: string; createdAt: string }[] }>('/parent/messages');
+  const { data, error, loading } = useApi<{
+    messages: { id: string; body: string; kind: string; createdAt: string }[];
+  }>('/parent/messages');
   return (
     <Card title="Messages reçus">
       <ErrorBox error={error} />
-      {loading ? <Spinner /> : data?.messages.length === 0 ? <Empty>Aucun message.</Empty> : (
+      {loading ? (
+        <Spinner />
+      ) : data?.messages.length === 0 ? (
+        <Empty>Aucun message.</Empty>
+      ) : (
         <ul className="divide-y divide-slate-100">
           {data?.messages.map((m) => (
             <li key={m.id} className="space-y-1 py-3 text-sm">
-              <p className="text-xs text-slate-500">{fmtDateTime(m.createdAt)}{m.kind === 'CORRECTION' ? ' · Rectification' : ''}</p>
+              <p className="text-xs text-slate-500">
+                {fmtDateTime(m.createdAt)}
+                {m.kind === 'CORRECTION' ? ' · Rectification' : ''}
+              </p>
               <p>{m.body}</p>
             </li>
           ))}
