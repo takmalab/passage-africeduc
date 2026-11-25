@@ -18,20 +18,24 @@ const SCHEDULER_LOCK_ID = 4_242_001;
  * toute façon idempotente (clés uniques).
  */
 export async function runSchedulerTick(now = new Date()): Promise<{ ran: boolean }> {
-  const [row] = await prisma.$queryRaw<{ locked: boolean }[]>`
-    SELECT pg_try_advisory_lock(${SCHEDULER_LOCK_ID}) AS locked`;
-  if (!row?.locked) return { ran: false };
-  try {
-    await detectMissedCheckpoints(now);
-    await dispatchPending();
-    const sessionCutoff = new Date(now.getTime() - env.SESSION_IDLE_MINUTES * 60_000);
-    await prisma.session.deleteMany({
-      where: { OR: [{ expiresAt: { lt: now } }, { lastSeenAt: { lt: sessionCutoff } }] },
-    });
-    return { ran: true };
-  } finally {
-    await prisma.$queryRaw`SELECT pg_advisory_unlock(${SCHEDULER_LOCK_ID})`;
-  }
+  // Verrou lié à une transaction : il est forcément pris et relâché sur la même
+  // connexion (un verrou de session pourrait être relâché sur une autre connexion
+  // du pool et rester bloqué). La transaction reste ouverte pendant le travail.
+  return prisma.$transaction(
+    async (tx) => {
+      const [row] = await tx.$queryRaw<{ locked: boolean }[]>`
+        SELECT pg_try_advisory_xact_lock(${SCHEDULER_LOCK_ID}) AS locked`;
+      if (!row?.locked) return { ran: false };
+      await detectMissedCheckpoints(now);
+      await dispatchPending();
+      const sessionCutoff = new Date(now.getTime() - env.SESSION_IDLE_MINUTES * 60_000);
+      await prisma.session.deleteMany({
+        where: { OR: [{ expiresAt: { lt: now } }, { lastSeenAt: { lt: sessionCutoff } }] },
+      });
+      return { ran: true };
+    },
+    { maxWait: 5_000, timeout: 120_000 },
+  );
 }
 
 export function startScheduler(): () => void {
