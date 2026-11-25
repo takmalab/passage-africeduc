@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, types, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: passage
+          POSTGRES_PASSWORD: passage
+          POSTGRES_DB: passage_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U passage"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://passage:passage@localhost:5432/passage_test
+      TEST_DATABASE_URL: postgresql://passage:passage@localhost:5432/passage_test
+      # Clé de test uniquement (aucune carte réelle) : pas un secret.
+      BADGE_KEYS_MASTER_KEY: '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Types
+        run: npm run typecheck
+      - name: Tests unitaires et d'intégration (vraie base PostgreSQL)
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Les migrations s'appliquent sur une base vierge
+        run: |
+          psql postgresql://passage:passage@localhost:5432/postgres -c 'CREATE DATABASE passage_ci;'
+          DATABASE_URL=postgresql://passage:passage@localhost:5432/passage_ci npx --workspace apps/api prisma migrate deploy
+          DATABASE_URL=postgresql://passage:passage@localhost:5432/passage_ci NODE_ENV=development npm run db:seed

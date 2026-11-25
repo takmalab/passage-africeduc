@@ -1,0 +1,88 @@
+import { env } from '../../config/env.js';
+import { MODEL_JSON_SCHEMA } from './guard.js';
+
+export type LlmRequest = { system: string; user: string };
+
+export type LlmResponse = {
+  /** Contenu JSON brut renvoyé par le modèle (non encore validé). */
+  content: string;
+  inputTokens: number;
+  outputTokens: number;
+};
+
+export class LlmTimeoutError extends Error {}
+
+/**
+ * Interface du modèle de langage. Le service de synthèse ne connaît que cette
+ * interface : les tests utilisent un faux modèle, et changer de fournisseur ne
+ * touche qu'une classe.
+ */
+export interface LlmClient {
+  readonly model: string;
+  complete(request: LlmRequest): Promise<LlmResponse>;
+}
+
+/** Appel direct à l'API Mistral (sortie contrainte par schéma JSON strict). */
+export class MistralClient implements LlmClient {
+  readonly model = env.MISTRAL_MODEL;
+
+  constructor(private readonly apiKey: string) {}
+
+  async complete(request: LlmRequest): Promise<LlmResponse> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), env.AI_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${env.MISTRAL_BASE_URL}/chat/completions`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0.2,
+          max_tokens: env.AI_MAX_OUTPUT_TOKENS,
+          messages: [
+            { role: 'system', content: request.system },
+            { role: 'user', content: request.user },
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: { name: 'daily_summary', schema: MODEL_JSON_SCHEMA, strict: true },
+          },
+        }),
+      });
+      if (!response.ok) throw new Error(`Mistral a répondu ${response.status}`);
+      const data = (await response.json()) as {
+        choices?: { message?: { content?: string } }[];
+        usage?: { prompt_tokens?: number; completion_tokens?: number };
+      };
+      return {
+        content: data.choices?.[0]?.message?.content ?? '',
+        inputTokens: data.usage?.prompt_tokens ?? 0,
+        outputTokens: data.usage?.completion_tokens ?? 0,
+      };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new LlmTimeoutError(`Pas de réponse en ${env.AI_TIMEOUT_MS} ms`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+
+let override: LlmClient | null | undefined;
+
+/** Client à utiliser, ou null en mode dégradé (pas de clé). */
+export function getLlmClient(): LlmClient | null {
+  if (override !== undefined) return override;
+  return env.MISTRAL_API_KEY ? new MistralClient(env.MISTRAL_API_KEY) : null;
+}
+
+/** Pour les tests : impose un faux modèle (ou null = pas de clé). `undefined` rétablit. */
+export function setLlmClient(client: LlmClient | null | undefined): void {
+  override = client;
+}

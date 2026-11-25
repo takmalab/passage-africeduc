@@ -1,0 +1,35 @@
+1
+00:00:05,000 --> 00:00:12,000
+Chaque matin, des milliers de parents se demandent :
+
+2
+00:00:12,000 --> 00:00:18,000
+mon enfant est-il bien arrivé à l'école ?
+
+3
+00:00:18,000 --> 00:00:24,000
+Avec Passage, l'élève pose sa carte, comme un paiement sans contact.
+
+4
+00:00:24,000 --> 00:00:30,000
+Une seconde, c'est enregistré.
+
+5
+00:00:30,000 --> 00:00:42,000
+Même quand le réseau tombe, rien n'est perdu : tout part dès qu'il revient.
+
+6
+00:00:42,000 --> 00:00:55,000
+Si votre enfant ne passe pas au portail, vous êtes prévenu automatiquement.
+
+7
+00:00:55,000 --> 00:01:08,000
+Une photo de la carte ne sert à rien : chaque passage est signé et ne vaut qu'une fois.
+
+8
+00:01:08,000 --> 00:01:20,000
+Le soir, l'école reçoit un résumé clair de la journée, avec des chiffres toujours exacts.
+
+9
+00:01:20,000 --> 00:01:28,000
+Passage. L'école sait, les parents sont rassurés.

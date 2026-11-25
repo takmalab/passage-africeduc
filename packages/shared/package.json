@@ -1,0 +1,21 @@
+{
+  "name": "@passage/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Schémas et formats partagés entre l'API et la PWA (badge, synchronisation, heures).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,34 @@
+# Lancement local complet : docker compose up --build
+# Puis, une seule fois : docker compose exec app npm run db:seed
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: passage
+      POSTGRES_PASSWORD: passage
+      POSTGRES_DB: passage
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U passage']
+      interval: 3s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://passage:passage@db:5432/passage
+      NODE_ENV: production
+      SEED_FORCE: 'true'
+    ports:
+      - '3000:3000'
+
+volumes:
+  pgdata:

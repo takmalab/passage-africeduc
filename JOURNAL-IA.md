@@ -1,0 +1,55 @@
+# Journal d'usage de l'IA
+
+> Ce journal doit être **vrai**. Les entrées ci-dessous décrivent la phase de préparation réellement menée avec Claude. Le candidat complète la section « Suite du développement » au fil de son propre travail, avec ses propres corrections. Supprimer ou enjoliver une entrée est exactement ce que le sujet sanctionne.
+
+## Outils utilisés
+
+| Outil                                      | Usage                                                                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Claude (claude.ai, modèle Claude Opus 5.5) | Lecture du sujet, analyse, document de compréhension, génération de la base du projet (code, tests, CI, documentation) |
+| Claude Code                                | Suite du développement sur le poste du candidat (voir CLAUDE.md et `.claude/skills`)                                   |
+| Mistral (`mistral-small-latest`)           | Dans le produit uniquement : rédaction de la synthèse du jour                                                          |
+
+## Pour quoi l'IA a servi
+
+- Comprendre le sujet et lister les cas d'usage, les pièges et les critères éliminatoires.
+- Rechercher l'état des technologies en novembre 2026 (Prisma 7 stable et Prisma 8 encore en préversion, Next.js 16, Mistral Small 4 et son mode JSON schema).
+- Générer l'architecture, le code, les migrations, les tests et la CI, commit par commit.
+- Retrouver et appliquer la spécification NXP AN12196 (cartes NTAG 424 DNA) avec ses vecteurs de test officiels.
+
+**Chaque partie générée a été relue, exécutée et testée** : 100 tests automatisés, dont des tests d'intégration sur une vraie base PostgreSQL, et un test de bout en bout dans un navigateur (captures dans `docs/captures/`).
+
+## Cas où une proposition de l'IA a été refusée ou corrigée
+
+### 1. Badge sur téléphone refusé : les élèves n'ont pas de téléphone
+
+L'IA a d'abord proposé un **QR code tournant affiché sur le téléphone de l'élève** (signature toutes les 30 s), en s'appuyant sur le scénario du sujet « badge affiché à l'écran ».
+
+**Refusé** : au Cameroun, les élèves ne viennent pas à l'école avec un téléphone. Proposition remplacée par une **carte physique NFC sécurisée** (NTAG 424 DNA), qui garde la résistance à la copie. Leçon : une solution techniquement élégante peut être inutilisable sur le terrain.
+
+### 2. Coût des cartes NFC : ajout d'un mode QR imprimé, renforcé
+
+Le mode « carte QR imprimée » existait mais était seulement **détecté** en cas de copie. **Demande de correction** : les cartes NFC peuvent être trop chères pour certaines écoles, le mode QR doit être réellement utilisable. Ajout d'une règle d'usage unique par point de contrôle dans une fenêtre de 2 h, avec test : la photo du QR présentée après l'élève est refusée. La faiblesse restante est documentée (DECISIONS.md D1).
+
+### 3. Bug du verrou du programme de fond, trouvé par les tests
+
+Le code généré prenait un verrou PostgreSQL **de session** (`pg_try_advisory_lock`) puis le relâchait avec une autre requête. Avec un pool de connexions, la libération pouvait partir sur une autre connexion : le verrou restait bloqué et le programme de fond ne tournait plus. **Les tests d'intégration ont échoué** (aucune anomalie créée au deuxième passage). Corrigé avec un verrou **lié à une transaction** (`pg_try_advisory_xact_lock`), forcément libéré sur la même connexion.
+
+### 4. Double alerte pour un même retard
+
+Première version : un élève arrivé à 07:58 recevait deux anomalies, « hors fenêtre » **et** « passage manquant », donc deux messages au parent pour un seul événement. Repéré en relisant les données de démonstration. Corrigé : une étape déjà signalée hors fenêtre n'est plus déclarée manquante (test ajouté).
+
+### 5. Next.js remplacé par Vite
+
+Proposition initiale (humaine) : Next.js. L'IA a proposé Vite + React pour un hors ligne plus fiable ; accepté après explication (DECISIONS.md D10).
+
+## Ce que l'IA n'a pas fait
+
+- Aucune carte NFC réelle n'a été programmée ni lue : le simulateur reproduit le calcul de la puce, vérifié par les vecteurs NXP, mais le test sur matériel reste à faire.
+- Les vidéos ne sont pas générées par l'IA : seuls les scripts et sous-titres sont fournis (`docs/video/`).
+
+## Suite du développement (à compléter par le candidat)
+
+| Date | Outil | Demande | Résultat | Accepté, corrigé ou refusé, et pourquoi |
+| ---- | ----- | ------- | -------- | --------------------------------------- |
+|      |       |         |          |                                         |
