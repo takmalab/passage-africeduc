@@ -35,7 +35,7 @@ jobs:
       # Clé de test uniquement (aucune carte réelle) : pas un secret.
       BADGE_KEYS_MASTER_KEY: '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
