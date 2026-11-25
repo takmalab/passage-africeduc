@@ -1,0 +1,480 @@
+// Modèle de données de Passage.
+// Écarts au modèle indicatif du sujet : voir DECISIONS.md, D9.
+// Contraintes impossibles à exprimer ici (index partiels, CHECK) :
+// voir la migration 0002_integrity_constraints.
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "esm"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  AGENT
+  MANAGER
+  PARENT
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BadgeKind {
+  NFC
+  PRINTED
+}
+
+enum BadgeStatus {
+  PENDING_ACTIVATION
+  ACTIVE
+  SUSPENDED
+  LOST
+  REVOKED
+}
+
+enum CheckpointType {
+  GATE
+  BUS
+}
+
+enum ExceptionType {
+  HOLIDAY
+  JUSTIFIED_ABSENCE
+  EARLY_EXIT_AUTHORIZED
+}
+
+enum ClockStatus {
+  OK
+  CORRECTED
+  UNRELIABLE
+}
+
+enum PassageVerdict {
+  ACCEPTED
+  REFUSED
+}
+
+enum AnomalyType {
+  MISSED_CHECKPOINT
+  OUT_OF_WINDOW
+  UNEXPECTED_CHECKPOINT
+  DOUBLE_SCAN
+  BADGE_REPLAY
+  INACTIVE_BADGE
+}
+
+enum AnomalyStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  AUTO_RESOLVED
+}
+
+enum MessageKind {
+  ALERT
+  CORRECTION
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  FAILED
+  SUPPRESSED
+}
+
+enum SummaryOrigin {
+  MODEL
+  MODEL_AFTER_RETRY
+  TEMPLATE
+}
+
+enum FallbackReason {
+  NO_API_KEY
+  BUDGET_EXCEEDED
+  PROVIDER_ERROR
+  INVALID_OUTPUT
+}
+
+enum AiCallStatus {
+  SUCCESS
+  INVALID_OUTPUT
+  PROVIDER_ERROR
+  TIMEOUT
+  BLOCKED_BUDGET
+  CACHE_HIT
+}
+
+model Establishment {
+  id                 String   @id @default(uuid(7)) @db.Uuid
+  name               String
+  timezone           String   @default("Africa/Douala")
+  /// Autorise les cartes imprimées (statiques, moins sûres). Désactivé par défaut.
+  allowPrintedBadges Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  users       User[]
+  classrooms  Classroom[]
+  students    Student[]
+  checkpoints Checkpoint[]
+  exceptions  DayException[]
+  devices     Device[]
+  anomalies   Anomaly[]
+}
+
+model User {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  name             String
+  login            String    @unique
+  passwordHash     String
+  role             Role
+  establishmentId  String?   @db.Uuid
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  createdAt        DateTime  @default(now())
+
+  establishment Establishment?   @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  sessions      Session[]
+  children      ParentStudent[]
+  messages      OutboundMessage[]
+  exceptions    DayException[]
+  devices       Device[]
+  summaries     Summary[]
+  auditLogs     AuditLog[]
+}
+
+model Session {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  /// Empreinte SHA-256 du jeton ; le jeton lui-même n'est jamais stocké.
+  tokenHash  String   @unique
+  userId     String   @db.Uuid
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  /// Expiration absolue, quelle que soit l'activité.
+  expiresAt  DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Classroom {
+  id              String @id @default(uuid(7)) @db.Uuid
+  establishmentId String @db.Uuid
+  name            String
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  students      Student[]
+  summaries     Summary[]
+
+  @@unique([establishmentId, name])
+}
+
+model Student {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  firstName       String
+  lastName        String
+  classroomId     String        @db.Uuid
+  establishmentId String        @db.Uuid
+  status          StudentStatus @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+
+  classroom     Classroom       @relation(fields: [classroomId], references: [id], onDelete: Restrict)
+  establishment Establishment   @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  parents       ParentStudent[]
+  badges        Badge[]
+  route         Route?
+  exceptions    DayException[]
+  passages      Passage[]
+  anomalies     Anomaly[]
+  messages      OutboundMessage[]
+
+  @@index([classroomId])
+}
+
+model ParentStudent {
+  parentId  String @db.Uuid
+  studentId String @db.Uuid
+
+  parent  User    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([parentId, studentId])
+  @@index([studentId])
+}
+
+model Badge {
+  id                  String      @id @default(uuid(7)) @db.Uuid
+  /// Référence aléatoire du badge (portée par le QR des cartes imprimées), sans lien avec l'élève.
+  publicId            String      @unique
+  studentId           String      @db.Uuid
+  kind                BadgeKind
+  status              BadgeStatus
+  /// Empreinte HMAC de l'UID de la puce NFC (cartes NFC). L'UID n'est pas stocké en clair.
+  uidHash             String?     @unique
+  /// Empreinte SHA-256 du secret imprimé (cartes QR imprimées).
+  staticSecretHash    String?
+  issuedAt            DateTime    @default(now())
+  activatedAt         DateTime?
+  statusChangedAt     DateTime    @default(now())
+  /// Badge remplacé par celui-ci lors d'une réémission.
+  replacesBadgeId     String?     @unique @db.Uuid
+
+  student       Student         @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  replaces      Badge?          @relation("BadgeReissue", fields: [replacesBadgeId], references: [id], onDelete: Restrict)
+  replacedBy    Badge?          @relation("BadgeReissue")
+  codeUses      BadgeCodeUse[]
+  passages      Passage[]
+  simulatedCard SimulatedCard?
+
+  @@index([studentId])
+  /// Un seul badge vivant (en attente, actif ou suspendu) par élève.
+  @@unique([studentId], map: "Badge_one_live_per_student", where: raw("status IN ('PENDING_ACTIVATION', 'ACTIVE', 'SUSPENDED')"))
+}
+
+/// Chaque compteur de lecture d'une carte NFC ne peut servir qu'une fois : la clé primaire l'impose.
+model BadgeCodeUse {
+  badgeId       String   @db.Uuid
+  counter       Int
+  passageId     String   @unique @db.Uuid
+  /// Heure retenue du passage : sert à vérifier que les compteurs croissent avec le temps.
+  effectiveTime DateTime
+  usedAt        DateTime @default(now())
+
+  badge   Badge   @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  passage Passage @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
+  @@id([badgeId, counter])
+}
+
+/// Carte NFC simulée (démonstration sans matériel). Même calcul que la puce réelle.
+model SimulatedCard {
+  badgeId String @id @db.Uuid
+  /// UID de 7 octets en hexadécimal (carte virtuelle uniquement).
+  uid     String
+  counter Int    @default(0)
+
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+}
+
+model Checkpoint {
+  id              String         @id @default(uuid(7)) @db.Uuid
+  establishmentId String         @db.Uuid
+  label           String
+  type            CheckpointType
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  routeSteps    RouteStep[]
+  passages      Passage[]
+
+  @@unique([establishmentId, label])
+}
+
+model Route {
+  id        String @id @default(uuid(7)) @db.Uuid
+  studentId String @unique @db.Uuid
+  name      String
+
+  student Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  steps   RouteStep[]
+}
+
+model RouteStep {
+  id           String @id @default(uuid(7)) @db.Uuid
+  routeId      String @db.Uuid
+  checkpointId String @db.Uuid
+  position     Int
+  /// Début et fin de fenêtre, en minutes depuis minuit (heure de l'établissement).
+  startMinute  Int
+  endMinute    Int
+  /// Jours ISO d'application : 1 = lundi ... 7 = dimanche.
+  days         Int[]
+
+  route      Route      @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  checkpoint Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Restrict)
+  anomalies  Anomaly[]
+
+  @@unique([routeId, position])
+}
+
+/// Jour férié (studentId nul : tout l'établissement), absence justifiée, sortie anticipée.
+model DayException {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  establishmentId String        @db.Uuid
+  studentId       String?       @db.Uuid
+  date            DateTime      @db.Date
+  type            ExceptionType
+  reason          String?
+  createdById     String        @db.Uuid
+  createdAt       DateTime      @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  student       Student?      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy     User          @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([establishmentId, date])
+}
+
+model Device {
+  /// Identifiant créé par le téléphone de l'agent (UUID), stable tant que ses données locales existent.
+  id                String   @id @db.Uuid
+  establishmentId   String   @db.Uuid
+  registeredById    String   @db.Uuid
+  createdAt         DateTime @default(now())
+  lastSeenAt        DateTime @default(now())
+  lastClockOffsetMs Int?
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  registeredBy  User          @relation(fields: [registeredById], references: [id], onDelete: Restrict)
+  passages      Passage[]
+}
+
+model Passage {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  deviceId         String         @db.Uuid
+  /// Identifiant créé sur l'appareil au moment du scan : garantit l'idempotence.
+  localEventId     String         @db.Uuid
+  checkpointId     String         @db.Uuid
+  badgeId          String?        @db.Uuid
+  studentId        String?        @db.Uuid
+  rawPublicId      String?
+  codeCounter      Int?
+  /// Heure brute de l'appareil au moment du scan (peut être fausse).
+  deviceLocalTime  DateTime
+  /// Heure de l'appareil au moment de l'envoi du lot.
+  deviceSentAt     DateTime
+  serverReceivedAt DateTime       @default(now())
+  /// Décalage estimé de l'horloge de l'appareil (serveur - appareil), en ms.
+  clockOffsetMs    Int
+  /// Heure retenue pour les calculs : heure locale corrigée du décalage.
+  effectiveTime    DateTime
+  clockStatus      ClockStatus
+  verdict          PassageVerdict
+  refusalReason    String?
+
+  device     Device        @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  checkpoint Checkpoint    @relation(fields: [checkpointId], references: [id], onDelete: Restrict)
+  badge      Badge?        @relation(fields: [badgeId], references: [id], onDelete: Restrict)
+  student    Student?      @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  codeUse    BadgeCodeUse?
+  anomalies  Anomaly[]
+
+  @@unique([deviceId, localEventId])
+  @@index([studentId, effectiveTime])
+  @@index([badgeId, effectiveTime])
+}
+
+model Anomaly {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  studentId       String        @db.Uuid
+  establishmentId String        @db.Uuid
+  type            AnomalyType
+  /// Jour concerné (heure de l'établissement).
+  date            DateTime      @db.Date
+  routeStepId     String?       @db.Uuid
+  passageId       String?       @db.Uuid
+  status          AnomalyStatus @default(OPEN)
+  /// Clé d'unicité métier : rend la détection rejouable sans doublon.
+  dedupeKey       String        @unique
+  details         Json
+  createdAt       DateTime      @default(now())
+  resolvedAt      DateTime?
+  resolutionNote  String?
+
+  student       Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  establishment Establishment     @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  routeStep     RouteStep?        @relation(fields: [routeStepId], references: [id], onDelete: SetNull)
+  passage       Passage?          @relation(fields: [passageId], references: [id], onDelete: SetNull)
+  messages      OutboundMessage[]
+
+  @@index([studentId, date])
+  @@index([establishmentId, date])
+}
+
+model OutboundMessage {
+  id                String        @id @default(uuid(7)) @db.Uuid
+  parentId          String        @db.Uuid
+  studentId         String        @db.Uuid
+  anomalyId         String        @db.Uuid
+  kind              MessageKind   @default(ALERT)
+  body              String
+  status            MessageStatus @default(PENDING)
+  /// Motif de non-envoi (plafond atteint, échec définitif...).
+  suppressionReason String?
+  provider          String
+  attempts          Int           @default(0)
+  lastError         String?
+  /// Jour d'envoi (heure de l'établissement), sert au plafond journalier.
+  dayKey            DateTime      @db.Date
+  createdAt         DateTime      @default(now())
+  sentAt            DateTime?
+
+  parent  User    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  anomaly Anomaly @relation(fields: [anomalyId], references: [id], onDelete: Cascade)
+
+  @@unique([anomalyId, parentId, kind])
+  @@index([studentId, parentId, dayKey])
+  @@index([status])
+}
+
+model Summary {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  classroomId    String          @db.Uuid
+  date           DateTime        @db.Date
+  /// Chiffres calculés par le code ; seule source des nombres affichés.
+  facts          Json
+  text           String
+  origin         SummaryOrigin
+  fallbackReason FallbackReason?
+  fromCache      Boolean         @default(false)
+  cacheKey       String
+  model          String?
+  requestedById  String          @db.Uuid
+  createdAt      DateTime        @default(now())
+
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  requestedBy User      @relation(fields: [requestedById], references: [id], onDelete: Restrict)
+
+  @@index([cacheKey])
+  @@index([classroomId, date])
+}
+
+/// Journal de chaque appel (ou tentative bloquée) au modèle de langage.
+model AiCall {
+  id               String       @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime     @default(now())
+  model            String
+  promptVersion    String
+  cacheKey         String
+  attempt          Int
+  status           AiCallStatus
+  inputTokens      Int          @default(0)
+  outputTokens     Int          @default(0)
+  estimatedCostUsd Decimal      @default(0) @db.Decimal(12, 6)
+  durationMs       Int          @default(0)
+  errorMessage     String?
+
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  targetType String
+  targetId   String?
+  ip         String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+}
