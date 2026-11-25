@@ -1,0 +1,40 @@
+{
+  "name": "@passage/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "PWA de Passage : scan hors ligne, badge tournant, espaces responsable et parent.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@passage/shared": "*",
+    "dexie": "^4.2.0",
+    "dexie-react-hooks": "^4.2.0",
+    "lucide-react": "^0.550.0",
+    "qr-scanner": "^1.4.2",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router": "^7.9.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "fake-indexeddb": "^6.2.0",
+    "jsdom": "^27.0.0",
+    "tailwindcss": "^4.1.0",
+    "vite": "^8.0.0",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.1.0"
+  }
+}
