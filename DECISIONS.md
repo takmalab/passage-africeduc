@@ -89,3 +89,18 @@ Le sujet ne valorise pas l'hébergement. Une image Docker unique et un script d'
 **Retenu.** Un `overrides` dans le `package.json` racine impose `effect` 3.22.5, version corrigée de la même branche 3.x (mêmes dépendances, même API). Vérifié : `npm ci`, `prisma generate`, `prisma migrate status`, `npm run verify` et `npm audit --omit=dev --audit-level=high` sans faille. À retirer dès qu'une version de Prisma embarque `effect` 3.22.1 ou plus.
 
 **Écarté.** `npm audit fix --force` : il ramène Prisma à la version 6.12 (changement majeur, projet cassé). Accepter la faille sans rien faire : elle touche surtout l'outil en ligne de commande de Prisma, mais le contrôle de sécurité resterait rouge.
+
+## D13. Comptes créés par le responsable : rôle fixé par la route, mot de passe généré
+
+**Problème.** Une école doit pouvoir démarrer seule : créer ses agents et les comptes des parents. Sans ouvrir de faille : ni création d'un responsable, ni accès d'un responsable aux parents d'une autre école.
+
+**Retenu.**
+
+- **Agents** : `POST /manager/agents`, rattachés à l'établissement du responsable (pris dans la session).
+- **Parents** : créés **depuis la fiche d'un élève** (`POST /manager/students/:id/parents`). Le compte et le lien parent-élève sont créés dans **la même transaction** ; si l'élève n'est pas dans l'établissement, réponse 404 et aucun compte créé. Un parent n'a pas d'établissement : le responsable ne voit que les parents de ses propres élèves, il n'existe aucune liste globale de parents.
+- **Rôle** fixé par la route ; schéma Zod `.strict()` : un champ `role` ajouté à la requête est refusé (400). Impossible de créer un responsable.
+- **Mot de passe provisoire** tiré au hasard par le serveur (12 octets, 16 caractères), haché en argon2id, renvoyé **une seule fois** et jamais écrit dans le journal d'audit.
+
+**Écarté.** Mot de passe saisi par le responsable : il le connaîtrait et risquerait d'en choisir un faible. Page « Comptes » avec des parents sans enfant : il aurait fallu donner un établissement aux parents, donc modifier le modèle et la règle `staffEstablishment`.
+
+**Limite.** Pas encore d'écran « changer mon mot de passe » (voir README).

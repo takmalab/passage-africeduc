@@ -13,6 +13,8 @@ import {
   tapSimulatedCard,
 } from '../badges/badges.service.js';
 import { generateSummary, spentTodayUsd } from '../summary/summary.service.js';
+import * as accounts from './accounts.service.js';
+import { loginSchema } from './accounts.service.js';
 import * as svc from './manager.service.js';
 
 const uuid = z.uuid();
@@ -82,6 +84,34 @@ managerRouter.get('/students/:id', async (req, res) => {
   const student = await svc.getStudentDetail(staffEstablishment(req), id);
   await audit(req, 'student.view', 'Student', id);
   res.json({ student });
+});
+
+// --- Comptes (agents, parents) ------------------------------------------------
+// Le rôle est fixé par la route ; .strict() refuse tout champ en trop (ex. « role »).
+const accountBody = z.object({ name, login: loginSchema }).strict();
+
+managerRouter.get('/agents', async (req, res) => {
+  res.json({ agents: await accounts.listAgents(staffEstablishment(req)) });
+});
+
+managerRouter.post('/agents', async (req, res) => {
+  const body = accountBody.parse(req.body);
+  const { agent, temporaryPassword } = await accounts.createAgent(staffEstablishment(req), body);
+  // Jamais le mot de passe dans le journal d'audit.
+  await audit(req, 'account.create_agent', 'User', agent.id);
+  res.status(201).json({ agent, temporaryPassword });
+});
+
+managerRouter.post('/students/:id/parents', async (req, res) => {
+  const id = uuid.parse(req.params.id);
+  const body = accountBody.parse(req.body);
+  const { parent, temporaryPassword } = await accounts.createParentForStudent(
+    staffEstablishment(req),
+    id,
+    body,
+  );
+  await audit(req, 'account.create_parent', 'User', parent.id, { studentId: id });
+  res.status(201).json({ parent, temporaryPassword });
 });
 
 managerRouter.put('/students/:id/route', async (req, res) => {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { patch } from '../../api';
 import { Card, ErrorBox } from '../../components/ui';
+import { AgentsCard } from './AgentsCard';
 import { CheckpointsCard } from './CheckpointsCard';
 import { ClassroomsCard } from './ClassroomsCard';
 import { useEstablishment } from './ManagerLayout';
@@ -47,6 +48,7 @@ export function SettingsPage() {
       </Card>
       <ClassroomsCard />
       <CheckpointsCard />
+      <AgentsCard />
     </>
   );
 }

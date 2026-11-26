@@ -7,6 +7,7 @@ import { Button, Card, ErrorBox, inputClass, Pill, Spinner } from '../../compone
 import { useApi } from '../../hooks';
 import { BADGE_KIND, BADGE_STATUS, fmtDateTime } from '../../labels';
 import { useEstablishment } from './ManagerLayout';
+import { NewAccountForm } from './NewAccountForm';
 import { RouteEditor, type Step } from './RouteEditor';
 
 type Badge = {
@@ -84,6 +85,13 @@ export function StudentDetailPage() {
         <p className="text-sm text-slate-600">
           Parents : {s.parents.map((p) => p.name).join(', ') || 'aucun'}
         </p>
+        <h3 className="mt-4 mb-2 text-sm font-medium">Créer le compte d’un parent de cet élève</h3>
+        {/* Le compte est créé ET lié à cet élève côté serveur, dans une même transaction. */}
+        <NewAccountForm
+          path={`/manager/students/${s.id}/parents`}
+          submitLabel="Créer et lier"
+          onCreated={reload}
+        />
       </Card>
 
       <Card title="Badge">

@@ -149,7 +149,7 @@ export async function listCheckpoints(establishmentId: string) {
  * (code Prisma P2002). On laisse la base trancher plutôt que de vérifier avant :
  * deux requêtes simultanées ne peuvent pas créer de doublon.
  */
-function isUniqueViolation(err: unknown): boolean {
+export function isUniqueViolation(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
 }
 
