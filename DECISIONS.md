@@ -81,3 +81,11 @@ Chaque décision : le problème, l'option retenue, ce qui a été écarté et po
 ## D11. Déploiement : seulement après le reste, pour une raison technique
 
 Le sujet ne valorise pas l'hébergement. Une image Docker unique et un script d'initialisation de base en ligne sont fournis, car **la caméra et le NFC exigent HTTPS sur téléphone** pour un test réel. Alternative sans Internet : certificat local (`npm run cert:lan`).
+
+## D12. Faille de sévérité haute dans une dépendance de Prisma : version corrigée imposée
+
+**Problème.** `npm audit` (workflow Sécurité) signale une faille ReDoS de sévérité haute dans `effect` 3.20.0 ([GHSA-7589-6fvf-x4pw](https://github.com/advisories/GHSA-7589-6fvf-x4pw)), utilisé par `prisma` via `@prisma/config`. Toutes les versions de Prisma 7 imposent exactement cette version.
+
+**Retenu.** Un `overrides` dans le `package.json` racine impose `effect` 3.22.5, version corrigée de la même branche 3.x (mêmes dépendances, même API). Vérifié : `npm ci`, `prisma generate`, `prisma migrate status`, `npm run verify` et `npm audit --omit=dev --audit-level=high` sans faille. À retirer dès qu'une version de Prisma embarque `effect` 3.22.1 ou plus.
+
+**Écarté.** `npm audit fix --force` : il ramène Prisma à la version 6.12 (changement majeur, projet cassé). Accepter la faille sans rien faire : elle touche surtout l'outil en ligne de commande de Prisma, mais le contrôle de sécurité resterait rouge.
