@@ -26,6 +26,7 @@ import { hashPassword } from '../src/modules/auth/password.js';
 import { nfcMacKey, nfcMetaKey, uidHash } from '../src/modules/badges/keys.js';
 import { simulateTap } from '../src/modules/badges/nfc-crypto.js';
 import { ingestBatch } from '../src/modules/sync/sync.service.js';
+import { applyEstablishmentRouteToStudent } from '../src/modules/manager/itinerary.service.js';
 
 const TZ = 'Africa/Douala';
 const WEEKDAYS = [1, 2, 3, 4, 5];
@@ -122,27 +123,23 @@ async function main() {
     takesBus: boolean;
   };
   const students: SeededStudent[] = [];
+  // Itinéraire de l'établissement, saisi une fois et recopié sur chaque élève (D14).
+  await prisma.establishmentRouteStep.createMany({
+    data: [
+      { checkpointId: bus.id, startMinute: 6 * 60 + 15, endMinute: 6 * 60 + 45 },
+      { checkpointId: entry.id, startMinute: 7 * 60, endMinute: 7 * 60 + 45 },
+      { checkpointId: exit.id, startMinute: 15 * 60 + 30, endMinute: 16 * 60 + 15 },
+    ].map((step, i) => ({ ...step, position: i + 1, days: WEEKDAYS, establishmentId: est.id })),
+  });
+
   for (const [firstName, lastName, classroomId, takesBus] of roster) {
     const student = await prisma.student.create({
-      data: { firstName, lastName, classroomId, establishmentId: est.id },
+      data: { firstName, lastName, classroomId, establishmentId: est.id, takesBus },
     });
-    const steps = takesBus
-      ? [
-          { checkpointId: bus.id, startMinute: 6 * 60 + 15, endMinute: 6 * 60 + 45 },
-          { checkpointId: entry.id, startMinute: 7 * 60, endMinute: 7 * 60 + 45 },
-          { checkpointId: exit.id, startMinute: 15 * 60 + 30, endMinute: 16 * 60 + 15 },
-        ]
-      : [
-          { checkpointId: entry.id, startMinute: 7 * 60, endMinute: 7 * 60 + 45 },
-          { checkpointId: exit.id, startMinute: 15 * 60 + 30, endMinute: 16 * 60 + 15 },
-        ];
-    await prisma.route.create({
-      data: {
-        studentId: student.id,
-        name: takesBus ? 'Bus + portail' : 'Portail',
-        steps: { create: steps.map((s, i) => ({ ...s, position: i + 1, days: WEEKDAYS })) },
-      },
-    });
+    // Même chemin que l'application : l'étape bus est sautée si l'élève ne prend pas le bus.
+    await prisma.$transaction((tx) =>
+      applyEstablishmentRouteToStudent(tx, est.id, student.id, takesBus),
+    );
 
     // Badge NFC avec carte simulée, activé comme une vraie carte.
     const badge = await prisma.badge.create({

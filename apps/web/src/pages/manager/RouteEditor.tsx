@@ -18,26 +18,23 @@ type Draft = { checkpointId: string; start: string; end: string; days: number[] 
 
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
-export function RouteEditor({
-  studentId,
-  initial,
-  onSaved,
-}: {
-  studentId: string;
-  initial: { name: string; steps: Step[] } | null;
-  onSaved: () => void;
-}) {
+/**
+ * Éditeur de l'itinéraire de l'établissement (D14) : saisi une fois, le serveur le
+ * recopie sur chaque élève (sans l'étape bus pour ceux qui ne prennent pas le bus).
+ */
+export function RouteEditor({ initial, onSaved }: { initial: Step[]; onSaved: () => void }) {
   const checkpoints = useApi<{ checkpoints: { id: string; label: string }[] }>(
     '/manager/checkpoints',
   );
-  const [name, setName] = useState(initial?.name ?? 'Itinéraire');
   const [steps, setSteps] = useState<Draft[]>(
-    initial?.steps.map((s) => ({
-      checkpointId: s.checkpoint?.id ?? '',
-      start: s.start,
-      end: s.end,
-      days: s.days,
-    })) ?? [{ checkpointId: '', start: '07:00', end: '07:45', days: [1, 2, 3, 4, 5] }],
+    initial.length > 0
+      ? initial.map((s) => ({
+          checkpointId: s.checkpoint?.id ?? '',
+          start: s.start,
+          end: s.end,
+          days: s.days,
+        }))
+      : [{ checkpointId: '', start: '07:00', end: '07:45', days: [1, 2, 3, 4, 5] }],
   );
   const [error, setError] = useState<unknown>(null);
   const [saving, setSaving] = useState(false);
@@ -53,7 +50,7 @@ export function RouteEditor({
         setSaving(true);
         setError(null);
         try {
-          await put(`/manager/students/${studentId}/route`, { name, steps });
+          await put('/manager/route', { steps });
           onSaved();
         } catch (err) {
           setError(err);
@@ -62,13 +59,6 @@ export function RouteEditor({
         }
       }}
     >
-      <input
-        className={inputClass}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        aria-label="Nom de l’itinéraire"
-        required
-      />
       {steps.map((s, i) => (
         <fieldset key={i} className="space-y-2 rounded-lg border border-slate-200 p-3">
           <legend className="px-1 text-xs font-medium text-slate-600">Étape {i + 1}</legend>

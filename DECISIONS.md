@@ -104,3 +104,17 @@ Le sujet ne valorise pas l'hébergement. Une image Docker unique et un script d'
 **Écarté.** Mot de passe saisi par le responsable : il le connaîtrait et risquerait d'en choisir un faible. Page « Comptes » avec des parents sans enfant : il aurait fallu donner un établissement aux parents, donc modifier le modèle et la règle `staffEstablishment`.
 
 **Limite.** Pas encore d'écran « changer mon mot de passe » (voir README).
+
+## D14. Itinéraire défini par l'établissement, appliqué à chaque élève (décision du candidat)
+
+**Problème.** Le sujet décrit l'itinéraire comme « une suite ordonnée de points de contrôle, chacun avec une fenêtre horaire et des jours d'application », et son modèle indicatif le rattache à l'**élève**. Mais une école ne raisonne pas élève par élève : elle a **un** portail d'entrée (07:00-07:45), **un** portail de sortie (15:30-16:15), et un autobus seulement si elle en dispose. Saisir les mêmes horaires sur chaque élève est fastidieux et source d'erreurs.
+
+**Retenu.** Le responsable saisit **une seule fois** l'itinéraire de l'établissement (Paramètres). Il est recopié automatiquement dans l'itinéraire de **chaque** élève, existant ou nouveau, et toute modification est répercutée sur tous. Les étapes de type autobus ne s'appliquent pas aux élèves marqués « Ne prend pas le bus » (case sur la fiche élève). Chaque élève garde donc sa propre copie, comme dans le modèle indicatif : le moteur d'anomalies est inchangé, et un élève sans bus qui badge au bus déclenche bien « point absent de l'itinéraire » (anomalie obligatoire n° 3). Les copies sont mises à jour sur place (mêmes identifiants d'étapes), pour qu'une alerte « passage manquant » déjà émise ne soit pas émise une seconde fois.
+
+**Écarté.**
+
+- Itinéraire saisi élève par élève (première version) : conforme au modèle indicatif, mais inutilisable pour une école de plusieurs centaines d'élèves.
+- « Appliquer l'itinéraire d'un élève à toute sa classe », **proposé par l'assistant IA et refusé par le candidat** : il laisse la configuration éparpillée par classe, alors que l'école n'a qu'un seul itinéraire.
+- Un itinéraire unique lu directement par le moteur, sans copie par élève : un élève qui ne prend pas le bus ne pourrait plus être signalé « hors itinéraire » s'il badge au bus, et la refonte du moteur d'anomalies était trop risquée à deux jours de l'échéance.
+
+**Limites.** Pas d'itinéraire différent selon la classe (par exemple une sortie plus tôt le mercredi pour les 6e) ; les exceptions du jour (sortie anticipée autorisée) couvrent les cas individuels. La recopie se fait dans une transaction sur tous les élèves : suffisant pour quelques centaines d'élèves, à revoir au-delà.

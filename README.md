@@ -25,18 +25,18 @@ L'agent de portail valide les badges **même sans réseau** ; le serveur détect
 
 ## Ce que fait l'application
 
-| Exigence du sujet                                                     | Où                                                | État                                                        |
-| --------------------------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------- |
-| 1. Authentification et rôles (agent, responsable, parent)             | `apps/api/src/modules/auth`, `middleware/auth.ts` | Fait, testé                                                 |
-| 2. Gestion des badges, carte non nominative, anti-copie, cycle de vie | `modules/badges`                                  | Fait, testé (cartes NFC NTAG 424 DNA + cartes QR imprimées) |
-| 3. Validation des passages, même hors ligne                           | `apps/web/src/offline`, `modules/sync`            | Fait, testé (20 scans, coupure, renvoi)                     |
-| 4. Horloge fausse de l'appareil                                       | `modules/sync/clock.ts`                           | Fait, testé (2 h d'avance)                                  |
-| 5. Itinéraires, fenêtres, jours                                       | `modules/manager`, `RouteEditor.tsx`              | Fait                                                        |
-| 6. Exceptions (férié, absence justifiée, sortie autorisée)            | `modules/manager`, `anomalies.service.ts`         | Fait, testé                                                 |
-| 7. Anomalies (4 imposées + 2 ajoutées)                                | `modules/anomalies`                               | Fait, testé                                                 |
-| 8. Notifications parents, interface fournisseur, plafond              | `modules/notifications`                           | Fait, testé                                                 |
-| 9. Synthèse IA sous 4 garde-fous                                      | `modules/summary`                                 | Fait, testé                                                 |
-| 10. Sécurité                                                          | voir [Sécurité](#sécurité)                        | Fait, testé                                                 |
+| Exigence du sujet                                                     | Où                                                | État                                                                                             |
+| --------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 1. Authentification et rôles (agent, responsable, parent)             | `apps/api/src/modules/auth`, `middleware/auth.ts` | Fait, testé                                                                                      |
+| 2. Gestion des badges, carte non nominative, anti-copie, cycle de vie | `modules/badges`                                  | Fait, testé (cartes NFC NTAG 424 DNA + cartes QR imprimées)                                      |
+| 3. Validation des passages, même hors ligne                           | `apps/web/src/offline`, `modules/sync`            | Fait, testé (20 scans, coupure, renvoi)                                                          |
+| 4. Horloge fausse de l'appareil                                       | `modules/sync/clock.ts`                           | Fait, testé (2 h d'avance)                                                                       |
+| 5. Itinéraires, fenêtres, jours                                       | `modules/manager`, `RouteEditor.tsx`              | Fait : itinéraire de l'établissement appliqué à chaque élève, case « Ne prend pas le bus » (D14) |
+| 6. Exceptions (férié, absence justifiée, sortie autorisée)            | `modules/manager`, `anomalies.service.ts`         | Fait, testé                                                                                      |
+| 7. Anomalies (4 imposées + 2 ajoutées)                                | `modules/anomalies`                               | Fait, testé                                                                                      |
+| 8. Notifications parents, interface fournisseur, plafond              | `modules/notifications`                           | Fait, testé                                                                                      |
+| 9. Synthèse IA sous 4 garde-fous                                      | `modules/summary`                                 | Fait, testé                                                                                      |
+| 10. Sécurité                                                          | voir [Sécurité](#sécurité)                        | Fait, testé                                                                                      |
 
 **Anomalies :** passage manquant (détecté par le programme de fond, sans aucune requête), hors fenêtre, point hors itinéraire, double scan en moins de 60 s, **tentative de copie du badge** (notre 5e, justifiée dans DECISIONS.md D6), badge désactivé présenté.
 

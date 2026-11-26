@@ -4,6 +4,7 @@ import { Card, ErrorBox } from '../../components/ui';
 import { AgentsCard } from './AgentsCard';
 import { CheckpointsCard } from './CheckpointsCard';
 import { ClassroomsCard } from './ClassroomsCard';
+import { EstablishmentRouteCard } from './EstablishmentRouteCard';
 import { useEstablishment } from './ManagerLayout';
 
 export function SettingsPage() {
@@ -48,6 +49,7 @@ export function SettingsPage() {
       </Card>
       <ClassroomsCard />
       <CheckpointsCard />
+      <EstablishmentRouteCard />
       <AgentsCard />
     </>
   );

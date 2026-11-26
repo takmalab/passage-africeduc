@@ -125,6 +125,8 @@ model Establishment {
   exceptions  DayException[]
   devices     Device[]
   anomalies   Anomaly[]
+  /// Itinéraire type de l'établissement, appliqué à chaque élève (voir D14).
+  routeSteps  EstablishmentRouteStep[]
 }
 
 model User {
@@ -138,7 +140,7 @@ model User {
   lockedUntil      DateTime?
   createdAt        DateTime  @default(now())
 
-  establishment Establishment?   @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  establishment Establishment?    @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
   sessions      Session[]
   children      ParentStudent[]
   messages      OutboundMessage[]
@@ -182,10 +184,12 @@ model Student {
   classroomId     String        @db.Uuid
   establishmentId String        @db.Uuid
   status          StudentStatus @default(ACTIVE)
+  /// Faux : les étapes de type BUS de l'itinéraire de l'établissement ne s'appliquent pas à cet élève.
+  takesBus        Boolean       @default(true)
   createdAt       DateTime      @default(now())
 
-  classroom     Classroom       @relation(fields: [classroomId], references: [id], onDelete: Restrict)
-  establishment Establishment   @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  classroom     Classroom         @relation(fields: [classroomId], references: [id], onDelete: Restrict)
+  establishment Establishment     @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
   parents       ParentStudent[]
   badges        Badge[]
   route         Route?
@@ -209,32 +213,32 @@ model ParentStudent {
 }
 
 model Badge {
-  id                  String      @id @default(uuid(7)) @db.Uuid
+  id               String      @id @default(uuid(7)) @db.Uuid
   /// Référence aléatoire du badge (portée par le QR des cartes imprimées), sans lien avec l'élève.
-  publicId            String      @unique
-  studentId           String      @db.Uuid
-  kind                BadgeKind
-  status              BadgeStatus
+  publicId         String      @unique
+  studentId        String      @db.Uuid
+  kind             BadgeKind
+  status           BadgeStatus
   /// Empreinte HMAC de l'UID de la puce NFC (cartes NFC). L'UID n'est pas stocké en clair.
-  uidHash             String?     @unique
+  uidHash          String?     @unique
   /// Empreinte SHA-256 du secret imprimé (cartes QR imprimées).
-  staticSecretHash    String?
-  issuedAt            DateTime    @default(now())
-  activatedAt         DateTime?
-  statusChangedAt     DateTime    @default(now())
+  staticSecretHash String?
+  issuedAt         DateTime    @default(now())
+  activatedAt      DateTime?
+  statusChangedAt  DateTime    @default(now())
   /// Badge remplacé par celui-ci lors d'une réémission.
-  replacesBadgeId     String?     @unique @db.Uuid
+  replacesBadgeId  String?     @unique @db.Uuid
 
-  student       Student         @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  replaces      Badge?          @relation("BadgeReissue", fields: [replacesBadgeId], references: [id], onDelete: Restrict)
-  replacedBy    Badge?          @relation("BadgeReissue")
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  replaces      Badge?         @relation("BadgeReissue", fields: [replacesBadgeId], references: [id], onDelete: Restrict)
+  replacedBy    Badge?         @relation("BadgeReissue")
   codeUses      BadgeCodeUse[]
   passages      Passage[]
   simulatedCard SimulatedCard?
 
-  @@index([studentId])
   /// Un seul badge vivant (en attente, actif ou suspendu) par élève.
   @@unique([studentId], map: "Badge_one_live_per_student", where: raw("status IN ('PENDING_ACTIVATION', 'ACTIVE', 'SUSPENDED')"))
+  @@index([studentId])
 }
 
 /// Chaque compteur de lecture d'une carte NFC ne peut servir qu'une fois : la clé primaire l'impose.
@@ -268,11 +272,33 @@ model Checkpoint {
   label           String
   type            CheckpointType
 
-  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
-  routeSteps    RouteStep[]
-  passages      Passage[]
+  establishment           Establishment            @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  routeSteps              RouteStep[]
+  establishmentRouteSteps EstablishmentRouteStep[]
+  passages                Passage[]
 
   @@unique([establishmentId, label])
+}
+
+/// Itinéraire type de l'établissement : saisi une fois par le responsable, puis recopié
+/// dans l'itinéraire de chaque élève (Route / RouteStep), que le moteur d'anomalies lit.
+model EstablishmentRouteStep {
+  id              String @id @default(uuid(7)) @db.Uuid
+  establishmentId String @db.Uuid
+  checkpointId    String @db.Uuid
+  position        Int
+  /// Début et fin de fenêtre, en minutes depuis minuit (heure de l'établissement).
+  startMinute     Int
+  endMinute       Int
+  /// Jours ISO d'application : 1 = lundi ... 7 = dimanche.
+  days            Int[]
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  checkpoint    Checkpoint    @relation(fields: [checkpointId], references: [id], onDelete: Restrict)
+
+  @@unique([establishmentId, position])
+  /// Un point figure au plus une fois dans l'itinéraire de l'établissement.
+  @@unique([establishmentId, checkpointId])
 }
 
 model Route {

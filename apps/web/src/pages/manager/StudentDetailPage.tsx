@@ -9,7 +9,7 @@ import { BADGE_KIND, BADGE_STATUS, fmtDateTime } from '../../labels';
 import { useEstablishment } from './ManagerLayout';
 import { NewAccountForm } from './NewAccountForm';
 import { ParentLinks } from './ParentLinks';
-import { RouteEditor, type Step } from './RouteEditor';
+import { type Step } from './RouteEditor';
 
 type Badge = {
   id: string;
@@ -26,6 +26,7 @@ type Student = {
   classroom: { name: string };
   parents: { id: string; name: string }[];
   badges: Badge[];
+  takesBus: boolean;
   route: { name: string; steps: Step[] } | null;
 };
 type IssueResult = {
@@ -45,7 +46,6 @@ export function StudentDetailPage() {
   const [actionError, setActionError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const [activationCode, setActivationCode] = useState('');
-  const [editRoute, setEditRoute] = useState(false);
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -204,24 +204,21 @@ export function StudentDetailPage() {
         )}
       </Card>
 
-      <Card
-        title="Itinéraire"
-        actions={
-          <Button variant="secondary" className="!py-1.5" onClick={() => setEditRoute((v) => !v)}>
-            {editRoute ? 'Fermer' : 'Modifier'}
-          </Button>
-        }
-      >
-        {editRoute ? (
-          <RouteEditor
-            studentId={s.id}
-            initial={s.route}
-            onSaved={() => {
-              setEditRoute(false);
-              reload();
-            }}
+      <Card title="Itinéraire">
+        {/* L'itinéraire vient de l'établissement (Paramètres) : pas de saisie élève par élève. */}
+        <label className="mb-3 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="size-4 accent-teal-700"
+            checked={!s.takesBus}
+            disabled={busy}
+            onChange={(e) =>
+              run(() => patch(`/manager/students/${s.id}`, { takesBus: !e.target.checked }))
+            }
           />
-        ) : s.route ? (
+          Ne prend pas le bus
+        </label>
+        {s.route && s.route.steps.length > 0 ? (
           <ol className="space-y-1 text-sm">
             {s.route.steps.map((st) => (
               <li key={st.id ?? st.position}>
@@ -232,7 +229,7 @@ export function StudentDetailPage() {
           </ol>
         ) : (
           <p className="text-sm text-slate-500">
-            Aucun itinéraire : aucune anomalie ne sera détectée pour cet élève.
+            Aucun itinéraire : définissez celui de l’établissement dans Paramètres.
           </p>
         )}
       </Card>

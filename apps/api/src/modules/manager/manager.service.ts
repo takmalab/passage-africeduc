@@ -1,4 +1,4 @@
-import { addDaysToDateKey, formatMinute, parseMinute } from '@passage/shared';
+import { addDaysToDateKey, formatMinute } from '@passage/shared';
 import {
   prisma,
   Prisma,
@@ -8,6 +8,7 @@ import {
 } from '../../db/prisma.js';
 import { badRequest, conflict, notFound } from '../../lib/errors.js';
 import { dateFromKey } from '../anomalies/anomalies.service.js';
+import { applyEstablishmentRouteToStudent } from './itinerary.service.js';
 
 /**
  * Requêtes de l'espace responsable. Chaque requête est bornée à l'établissement
@@ -75,6 +76,7 @@ export async function getStudentDetail(establishmentId: string, studentId: strin
       firstName: true,
       lastName: true,
       status: true,
+      takesBus: true,
       classroom: { select: { id: true, name: true } },
       parents: { select: { parent: { select: { id: true, name: true } } } },
       badges: {
@@ -130,9 +132,14 @@ export async function createStudent(
     where: { id: input.classroomId, establishmentId },
   });
   if (!classroom) throw badRequest('Classe inconnue.');
-  return prisma.student.create({
-    data: { ...input, establishmentId },
-    select: { id: true, firstName: true, lastName: true },
+  // L'élève reçoit tout de suite l'itinéraire de l'établissement (D14).
+  return prisma.$transaction(async (tx) => {
+    const student = await tx.student.create({
+      data: { ...input, establishmentId },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    await applyEstablishmentRouteToStudent(tx, establishmentId, student.id, true);
+    return student;
   });
 }
 
@@ -167,55 +174,6 @@ export async function createCheckpoint(
     if (isUniqueViolation(err)) throw conflict('Un point de contrôle porte déjà ce nom.');
     throw err;
   }
-}
-
-export type StepInput = {
-  checkpointId: string;
-  start: string;
-  end: string;
-  days: number[];
-};
-
-/** Remplace l'itinéraire d'un élève (transaction : tout ou rien). */
-export async function replaceRoute(
-  establishmentId: string,
-  studentId: string,
-  name: string,
-  steps: StepInput[],
-) {
-  const student = await prisma.student.findFirst({ where: { id: studentId, establishmentId } });
-  if (!student) throw notFound('Élève introuvable.');
-  const checkpointIds = new Set(
-    (await prisma.checkpoint.findMany({ where: { establishmentId }, select: { id: true } })).map(
-      (c) => c.id,
-    ),
-  );
-  const parsed = steps.map((s, i) => {
-    const startMinute = parseMinute(s.start);
-    const endMinute = parseMinute(s.end);
-    if (startMinute === null || endMinute === null || startMinute >= endMinute) {
-      throw badRequest(`Étape ${i + 1} : fenêtre horaire invalide.`);
-    }
-    if (!checkpointIds.has(s.checkpointId)) throw badRequest(`Étape ${i + 1} : point inconnu.`);
-    return {
-      checkpointId: s.checkpointId,
-      position: i + 1,
-      startMinute,
-      endMinute,
-      days: [...new Set(s.days)].sort(),
-    };
-  });
-
-  return prisma.$transaction(async (tx) => {
-    const route = await tx.route.upsert({
-      where: { studentId },
-      create: { studentId, name },
-      update: { name },
-    });
-    await tx.routeStep.deleteMany({ where: { routeId: route.id } });
-    await tx.routeStep.createMany({ data: parsed.map((p) => ({ ...p, routeId: route.id })) });
-    return { id: route.id, steps: parsed.length };
-  });
 }
 
 export async function listExceptions(establishmentId: string, fromKey: string) {

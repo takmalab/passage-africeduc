@@ -14,6 +14,7 @@ import {
 } from '../badges/badges.service.js';
 import { generateSummary, spentTodayUsd } from '../summary/summary.service.js';
 import * as accounts from './accounts.service.js';
+import * as itinerary from './itinerary.service.js';
 import { loginSchema } from './accounts.service.js';
 import * as svc from './manager.service.js';
 
@@ -136,27 +137,43 @@ managerRouter.delete('/students/:id/parents/:parentId', async (req, res) => {
   res.status(204).end();
 });
 
-managerRouter.put('/students/:id/route', async (req, res) => {
-  const id = uuid.parse(req.params.id);
+// --- Itinéraire de l'établissement (D14) ---------------------------------------
+// Saisi une fois, recopié sur chaque élève ; plus de saisie élève par élève.
+
+managerRouter.get('/route', async (req, res) => {
+  res.json({ steps: await itinerary.getEstablishmentRoute(staffEstablishment(req)) });
+});
+
+managerRouter.put('/route', async (req, res) => {
   const body = z
     .object({
-      name,
       steps: z
         .array(
-          z.object({
-            checkpointId: uuid,
-            start: z.string(),
-            end: z.string(),
-            days: z.array(z.number().int().min(1).max(7)).min(1).max(7),
-          }),
+          z
+            .object({
+              checkpointId: uuid,
+              start: z.string(),
+              end: z.string(),
+              days: z.array(z.number().int().min(1).max(7)).min(1).max(7),
+            })
+            .strict(),
         )
         .min(1)
         .max(10),
     })
     .strict()
     .parse(req.body);
-  const result = await svc.replaceRoute(staffEstablishment(req), id, body.name, body.steps);
-  await audit(req, 'route.replace', 'Student', id);
+  const result = await itinerary.saveEstablishmentRoute(staffEstablishment(req), body.steps);
+  await audit(req, 'route.save_establishment', 'Establishment', staffEstablishment(req));
+  res.json(result);
+});
+
+/** Case « Ne prend pas le bus » de la fiche élève. */
+managerRouter.patch('/students/:id', async (req, res) => {
+  const id = uuid.parse(req.params.id);
+  const body = z.object({ takesBus: z.boolean() }).strict().parse(req.body);
+  const result = await itinerary.setTakesBus(staffEstablishment(req), id, body.takesBus);
+  await audit(req, 'student.takes_bus', 'Student', id, body);
   res.json(result);
 });
 
