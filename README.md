@@ -4,10 +4,8 @@ Module de suivi des passages d'élèves par badge, pour SchoolLogs (test techniq
 
 L'agent de portail valide les badges **même sans réseau** ; le serveur détecte seul les passages manquants, prévient les parents, et produit une synthèse du jour avec Mistral **sans jamais laisser le modèle écrire un chiffre**.
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![Sécurité](https://github.com/OWNER/REPO/actions/workflows/security.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/security.yml)
-
-> Remplacer `OWNER/REPO` par le dépôt réel (fait automatiquement par l'étape 2 de `docs/STEPS.md`).
+[![CI](https://github.com/takmalab/passage-africeduc/actions/workflows/ci.yml/badge.svg)](https://github.com/takmalab/passage-africeduc/actions/workflows/ci.yml)
+[![Sécurité](https://github.com/takmalab/passage-africeduc/actions/workflows/security.yml/badge.svg)](https://github.com/takmalab/passage-africeduc/actions/workflows/security.yml)
 
 | Capture                                                      |                                                              |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
