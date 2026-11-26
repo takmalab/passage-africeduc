@@ -54,6 +54,15 @@ managerRouter.get('/classrooms', async (req, res) => {
   res.json({ classrooms: await svc.listClassrooms(staffEstablishment(req)) });
 });
 
+managerRouter.post('/classrooms', async (req, res) => {
+  // .strict() : tout champ en trop (ex. establishmentId) est refusé ; l'établissement
+  // vient toujours de la session du responsable.
+  const body = z.object({ name }).strict().parse(req.body);
+  const classroom = await svc.createClassroom(staffEstablishment(req), body.name);
+  await audit(req, 'classroom.create', 'Classroom', classroom.id);
+  res.status(201).json({ classroom });
+});
+
 managerRouter.get('/students', async (req, res) => {
   res.json({ students: await svc.listStudents(staffEstablishment(req)) });
 });

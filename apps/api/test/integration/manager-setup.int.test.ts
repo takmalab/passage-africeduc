@@ -73,3 +73,60 @@ describe('points de contrôle', () => {
     }
   });
 });
+
+describe('classes', () => {
+  it('le responsable crée une classe, puis peut y inscrire un élève', async () => {
+    await seedWorld();
+    const manager = await loggedIn('responsable');
+    const res = await manager.post('/api/manager/classrooms', { name: '4e B' });
+    expect(res.status).toBe(201);
+    expect(res.body.classroom).toMatchObject({ name: '4e B' });
+
+    const student = await manager.post('/api/manager/students', {
+      firstName: 'Ines',
+      lastName: 'Test',
+      classroomId: res.body.classroom.id,
+    });
+    expect(student.status).toBe(201);
+  });
+
+  it('refuse un nom de classe déjà utilisé dans le même établissement (409, message clair)', async () => {
+    await seedWorld();
+    const manager = await loggedIn('responsable');
+    // « 3e A » existe déjà dans seedWorld.
+    const res = await manager.post('/api/manager/classrooms', { name: '3e A' });
+    expect(res.status).toBe(409);
+    expect(res.body.error.message).toBe('Une classe porte déjà ce nom.');
+  });
+
+  it("une classe d'un autre établissement est invisible et inutilisable", async () => {
+    await seedWorld();
+    await seedWorld('2');
+    const managerB = await loggedIn('responsable2');
+    const created = await managerB.post('/api/manager/classrooms', { name: '6e C' });
+    expect(created.status).toBe(201);
+
+    const managerA = await loggedIn('responsable');
+    const listA = await managerA.get('/api/manager/classrooms');
+    expect(listA.body.classrooms.map((c: { name: string }) => c.name)).not.toContain('6e C');
+    // Inscrire un élève de A dans la classe de B : refusé.
+    const student = await managerA.post('/api/manager/students', {
+      firstName: 'Intrus',
+      lastName: 'Test',
+      classroomId: created.body.classroom.id,
+    });
+    expect(student.status).toBe(400);
+  });
+
+  it('refuse un agent et un parent (403) et toute donnée invalide (400)', async () => {
+    await seedWorld();
+    for (const login of ['agent', 'parent.a']) {
+      const c = await loggedIn(login);
+      expect((await c.post('/api/manager/classrooms', { name: '5e A' })).status).toBe(403);
+    }
+    const manager = await loggedIn('responsable');
+    for (const body of [{ name: '' }, { name: '5e A', establishmentId: 'autre' }, {}]) {
+      expect((await manager.post('/api/manager/classrooms', body)).status).toBe(400);
+    }
+  });
+});

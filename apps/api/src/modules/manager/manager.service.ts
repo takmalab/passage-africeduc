@@ -22,6 +22,19 @@ export async function listClassrooms(establishmentId: string) {
   });
 }
 
+export async function createClassroom(establishmentId: string, name: string) {
+  try {
+    return await prisma.classroom.create({
+      data: { name, establishmentId },
+      select: { id: true, name: true },
+    });
+  } catch (err) {
+    // Contrainte @@unique([establishmentId, name]) : nom déjà pris dans CET établissement.
+    if (isUniqueViolation(err)) throw conflict('Une classe porte déjà ce nom.');
+    throw err;
+  }
+}
+
 export async function listStudents(establishmentId: string) {
   const students = await prisma.student.findMany({
     where: { establishmentId },

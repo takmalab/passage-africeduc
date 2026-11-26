@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { patch } from '../../api';
 import { Card, ErrorBox } from '../../components/ui';
 import { CheckpointsCard } from './CheckpointsCard';
+import { ClassroomsCard } from './ClassroomsCard';
 import { useEstablishment } from './ManagerLayout';
 
 export function SettingsPage() {
@@ -44,6 +45,7 @@ export function SettingsPage() {
           <ErrorBox error={error} />
         </div>
       </Card>
+      <ClassroomsCard />
       <CheckpointsCard />
     </>
   );
