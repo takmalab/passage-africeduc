@@ -32,6 +32,7 @@ export function client() {
         .put(url)
         .set('X-Requested-With', 'passage')
         .send(body ?? {}),
+    delete: (url: string) => agent.delete(url).set('X-Requested-With', 'passage'),
   };
 }
 

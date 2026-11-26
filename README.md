@@ -141,7 +141,7 @@ Dit honnêtement, par ordre d'importance :
 - **Envoi réel de SMS** : seule l'interface et la boîte d'envoi existent.
 - **Gestion multi-établissements** : le modèle la supporte, mais il n'y a pas d'écran d'administration globale : les établissements et les comptes responsables sont créés par le seed. Le responsable crée lui-même ses classes, points de contrôle, agents et comptes parents (DECISIONS.md, D13).
 - **Mot de passe provisoire** : il n'y a pas encore d'écran « changer mon mot de passe » ni d'obligation de le changer à la première connexion.
-- **Interface** : volontairement sobre ; pas d'édition des liens parent-enfant dans l'interface.
+- **Interface** : volontairement sobre. Un compte parent dont on retire le dernier lien reste en base sans accès à aucun élève ; il n'y a pas d'écran de suppression de compte.
 - **Mise à l'échelle** : non traitée (non demandée).
 
 ## Documentation

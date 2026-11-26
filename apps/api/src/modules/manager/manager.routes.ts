@@ -114,6 +114,28 @@ managerRouter.post('/students/:id/parents', async (req, res) => {
   res.status(201).json({ parent, temporaryPassword });
 });
 
+// --- Liens parent-élève (frère, sœur ; erreur de saisie, changement de garde) ----
+
+managerRouter.get('/parents', async (req, res) => {
+  res.json({ parents: await accounts.listEstablishmentParents(staffEstablishment(req)) });
+});
+
+managerRouter.post('/students/:id/parents/link', async (req, res) => {
+  const id = uuid.parse(req.params.id);
+  const body = z.object({ parentId: uuid }).strict().parse(req.body);
+  await accounts.linkParent(staffEstablishment(req), id, body.parentId);
+  await audit(req, 'parent_link.create', 'Student', id, { parentId: body.parentId });
+  res.status(201).json({ linked: true });
+});
+
+managerRouter.delete('/students/:id/parents/:parentId', async (req, res) => {
+  const id = uuid.parse(req.params.id);
+  const parentId = uuid.parse(req.params.parentId);
+  await accounts.unlinkParent(staffEstablishment(req), id, parentId);
+  await audit(req, 'parent_link.delete', 'Student', id, { parentId });
+  res.status(204).end();
+});
+
 managerRouter.put('/students/:id/route', async (req, res) => {
   const id = uuid.parse(req.params.id);
   const body = z

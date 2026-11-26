@@ -8,6 +8,7 @@ import { useApi } from '../../hooks';
 import { BADGE_KIND, BADGE_STATUS, fmtDateTime } from '../../labels';
 import { useEstablishment } from './ManagerLayout';
 import { NewAccountForm } from './NewAccountForm';
+import { ParentLinks } from './ParentLinks';
 import { RouteEditor, type Step } from './RouteEditor';
 
 type Badge = {
@@ -82,9 +83,7 @@ export function StudentDetailPage() {
       </Link>
       <Card title={`${s.firstName} ${s.lastName}`}>
         <p className="text-sm text-slate-600">Classe : {s.classroom.name}</p>
-        <p className="text-sm text-slate-600">
-          Parents : {s.parents.map((p) => p.name).join(', ') || 'aucun'}
-        </p>
+        <ParentLinks studentId={s.id} parents={s.parents} onChanged={reload} />
         <h3 className="mt-4 mb-2 text-sm font-medium">Créer le compte d’un parent de cet élève</h3>
         {/* Le compte est créé ET lié à cet élève côté serveur, dans une même transaction. */}
         <NewAccountForm

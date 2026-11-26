@@ -83,3 +83,52 @@ export async function createParentForStudent(
     throw err;
   }
 }
+
+// --- Liens parent-élève ----------------------------------------------------------
+
+/**
+ * Parents connus de l'établissement : ceux liés à au moins un de SES élèves.
+ * Il n'existe pas de liste globale des parents : un responsable ne voit jamais
+ * les parents d'une autre école.
+ */
+export async function listEstablishmentParents(establishmentId: string) {
+  return prisma.user.findMany({
+    where: { role: 'PARENT', children: { some: { student: { establishmentId } } } },
+    orderBy: { name: 'asc' },
+    select: accountSelect,
+  });
+}
+
+/** Lie un parent connu de l'établissement à un élève de l'établissement (frère, sœur...). */
+export async function linkParent(establishmentId: string, studentId: string, parentId: string) {
+  const [student, parent] = await Promise.all([
+    prisma.student.findFirst({ where: { id: studentId, establishmentId }, select: { id: true } }),
+    prisma.user.findFirst({
+      where: {
+        id: parentId,
+        role: 'PARENT',
+        children: { some: { student: { establishmentId } } },
+      },
+      select: { id: true },
+    }),
+  ]);
+  // Même réponse pour « n'existe pas » et « appartient à une autre école » : rien n'est révélé.
+  if (!student) throw notFound('Élève introuvable.');
+  if (!parent) throw notFound('Parent introuvable.');
+  try {
+    await prisma.parentStudent.create({ data: { parentId: parent.id, studentId: student.id } });
+  } catch (err) {
+    // Clé primaire (parentId, studentId) : le lien existe déjà.
+    if (isUniqueViolation(err)) throw conflict('Ce parent est déjà lié à cet élève.');
+    throw err;
+  }
+}
+
+/** Retire un lien : le parent perd l'accès à cet élève ; son compte est conservé. */
+export async function unlinkParent(establishmentId: string, studentId: string, parentId: string) {
+  // Le filtre sur l'établissement est DANS la requête de suppression.
+  const { count } = await prisma.parentStudent.deleteMany({
+    where: { parentId, studentId, student: { establishmentId } },
+  });
+  if (count === 0) throw notFound('Lien introuvable.');
+}

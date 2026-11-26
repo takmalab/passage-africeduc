@@ -273,3 +273,119 @@ describe('comptes parents', () => {
     expect(await prisma.parentStudent.count({ where: { studentId: w.students[2]!.id } })).toBe(0);
   });
 });
+
+describe('liens parent-élève', () => {
+  it('lie un parent existant à un frère ou une sœur : il voit alors ses deux enfants', async () => {
+    const w = await seedWorld();
+    const manager = await loggedIn('responsable');
+    const [awa, , brenda] = w.students;
+    const res = await manager.post(`/api/manager/students/${brenda!.id}/parents/link`, {
+      parentId: w.parentA.id,
+    });
+    expect(res.status).toBe(201);
+
+    const parent = await loggedIn('parent.a');
+    const children = await parent.get('/api/parent/children');
+    expect(children.body.children.map((s: { firstName: string }) => s.firstName)).toEqual([
+      'Awa',
+      'Brenda',
+    ]);
+    expect((await parent.get(`/api/parent/children/${awa!.id}`)).status).toBe(200);
+    expect((await parent.get(`/api/parent/children/${brenda!.id}`)).status).toBe(200);
+
+    // Lier une seconde fois : refusé, message clair.
+    const again = await manager.post(`/api/manager/students/${brenda!.id}/parents/link`, {
+      parentId: w.parentA.id,
+    });
+    expect(again.status).toBe(409);
+    expect(again.body.error.message).toBe('Ce parent est déjà lié à cet élève.');
+  });
+
+  it("ne montre et ne lie que les parents de l'établissement (404 pour un parent d'une autre école)", async () => {
+    const w = await seedWorld();
+    const other = await seedWorld('2');
+    const manager = await loggedIn('responsable');
+
+    const list = await manager.get('/api/manager/parents');
+    const ids = list.body.parents.map((p: { id: string }) => p.id);
+    expect(ids).toEqual(expect.arrayContaining([w.parentA.id, w.parentB.id]));
+    expect(ids).not.toContain(other.parentA.id);
+    expect(ids).not.toContain(other.parentB.id);
+
+    const res = await manager.post(`/api/manager/students/${w.students[2]!.id}/parents/link`, {
+      parentId: other.parentA.id,
+    });
+    expect(res.status).toBe(404);
+    // Un agent n'est pas un parent : même réponse.
+    const agentAsParent = await manager.post(
+      `/api/manager/students/${w.students[2]!.id}/parents/link`,
+      { parentId: w.agent.id },
+    );
+    expect(agentAsParent.status).toBe(404);
+    expect(await prisma.parentStudent.count({ where: { studentId: w.students[2]!.id } })).toBe(0);
+
+    // Élève d'une autre école : 404 aussi.
+    const foreignStudent = await manager.post(
+      `/api/manager/students/${other.students[0]!.id}/parents/link`,
+      { parentId: w.parentA.id },
+    );
+    expect(foreignStudent.status).toBe(404);
+  });
+
+  it("retirer le lien coupe l'accès du parent immédiatement, sans supprimer son compte", async () => {
+    const w = await seedWorld();
+    const manager = await loggedIn('responsable');
+    const parent = await loggedIn('parent.a');
+    const awa = w.students[0]!;
+    expect((await parent.get(`/api/parent/children/${awa.id}`)).status).toBe(200);
+
+    const res = await manager.delete(`/api/manager/students/${awa.id}/parents/${w.parentA.id}`);
+    expect(res.status).toBe(204);
+    expect((await parent.get(`/api/parent/children/${awa.id}`)).status).toBe(404);
+    expect((await parent.get('/api/parent/children')).body.children).toEqual([]);
+    expect(await prisma.user.count({ where: { id: w.parentA.id } })).toBe(1);
+
+    // Plus de lien à retirer : 404.
+    const again = await manager.delete(`/api/manager/students/${awa.id}/parents/${w.parentA.id}`);
+    expect(again.status).toBe(404);
+  });
+
+  it("ne retire pas le lien d'un élève d'une autre école (404, lien intact)", async () => {
+    await seedWorld();
+    const other = await seedWorld('2');
+    const manager = await loggedIn('responsable');
+    const res = await manager.delete(
+      `/api/manager/students/${other.students[0]!.id}/parents/${other.parentA.id}`,
+    );
+    expect(res.status).toBe(404);
+    expect(
+      await prisma.parentStudent.count({
+        where: { studentId: other.students[0]!.id, parentId: other.parentA.id },
+      }),
+    ).toBe(1);
+  });
+
+  it('refuse un agent et un parent (403) et une donnée invalide (400)', async () => {
+    const w = await seedWorld();
+    for (const login of ['agent', 'parent.a']) {
+      const c = await loggedIn(login);
+      expect((await c.get('/api/manager/parents')).status).toBe(403);
+      expect(
+        (
+          await c.post(`/api/manager/students/${w.students[2]!.id}/parents/link`, {
+            parentId: w.parentA.id,
+          })
+        ).status,
+      ).toBe(403);
+      expect(
+        (await c.delete(`/api/manager/students/${w.students[0]!.id}/parents/${w.parentA.id}`))
+          .status,
+      ).toBe(403);
+    }
+    const manager = await loggedIn('responsable');
+    const url = `/api/manager/students/${w.students[2]!.id}/parents/link`;
+    for (const body of [{}, { parentId: 'pas-un-uuid' }, { parentId: w.parentA.id, role: 'X' }]) {
+      expect((await manager.post(url, body)).status).toBe(400);
+    }
+  });
+});
