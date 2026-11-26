@@ -42,6 +42,11 @@ export const EXCEPTION_TYPES: Record<string, string> = {
   EARLY_EXIT_AUTHORIZED: 'Sortie anticipée autorisée',
 };
 
+export const CHECKPOINT_TYPES: Record<string, string> = {
+  GATE: 'Portail',
+  BUS: 'Bus',
+};
+
 export const ORIGIN_LABELS: Record<string, string> = {
   MODEL: 'Rédigée par le modèle',
   MODEL_AFTER_RETRY: 'Rédigée par le modèle (après un nouvel essai)',

@@ -1,11 +1,12 @@
 import { addDaysToDateKey, formatMinute, parseMinute } from '@passage/shared';
 import {
   prisma,
+  Prisma,
   type AnomalyStatus,
   type CheckpointType,
   type ExceptionType,
 } from '../../db/prisma.js';
-import { badRequest, notFound } from '../../lib/errors.js';
+import { badRequest, conflict, notFound } from '../../lib/errors.js';
 import { dateFromKey } from '../anomalies/anomalies.service.js';
 
 /**
@@ -130,14 +131,29 @@ export async function listCheckpoints(establishmentId: string) {
   });
 }
 
+/**
+ * Vrai si PostgreSQL a refusé l'écriture à cause d'une contrainte d'unicité
+ * (code Prisma P2002). On laisse la base trancher plutôt que de vérifier avant :
+ * deux requêtes simultanées ne peuvent pas créer de doublon.
+ */
+function isUniqueViolation(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
+}
+
 export async function createCheckpoint(
   establishmentId: string,
   input: { label: string; type: CheckpointType },
 ) {
-  return prisma.checkpoint.create({
-    data: { ...input, establishmentId },
-    select: { id: true, label: true, type: true },
-  });
+  try {
+    return await prisma.checkpoint.create({
+      data: { ...input, establishmentId },
+      select: { id: true, label: true, type: true },
+    });
+  } catch (err) {
+    // Contrainte @@unique([establishmentId, label]) : nom déjà pris dans CET établissement.
+    if (isUniqueViolation(err)) throw conflict('Un point de contrôle porte déjà ce nom.');
+    throw err;
+  }
 }
 
 export type StepInput = {
