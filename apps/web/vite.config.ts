@@ -37,6 +37,14 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
-    proxy: { '/api': 'http://localhost:3000' },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        // Garder l'en-tête Host d'origine (localhost:5173) : le contrôle anti-CSRF
+        // de l'API accepte une origine égale à l'hôte de la requête. Sans cela,
+        // l'API voit Host = localhost:3000 et refuse la connexion (403).
+        changeOrigin: false,
+      },
+    },
   },
 });
