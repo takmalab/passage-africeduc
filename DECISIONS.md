@@ -126,3 +126,13 @@ Le sujet ne valorise pas l'hébergement. Une image Docker unique et un script d'
 **Retenu.** « Vue » reste un simple clic (prise en charge). « Résolue » exige un **motif** de 3 à 200 caractères (par exemple « Mère appelée : élève malade ») : sans lui, le serveur refuse (400). Le motif est enregistré sur l'anomalie et dans le journal d'audit, avec l'auteur et l'heure. Il est **visible par l'école uniquement** : la requête du parent ne sélectionne pas ce champ, il voit seulement l'état « Résolue » (testé).
 
 **Écarté.** Motif facultatif : la raison se perd. Motif visible par le parent : il peut contenir une information sensible (santé, situation familiale), alors que le sujet exige des messages au parent sans donnée sensible.
+
+## D16. Pas de super administrateur dans le module : l'administration globale relève de SchoolLogs
+
+**Problème.** Passage est un module de SchoolLogs, une plateforme déployée auprès de plusieurs établissements et partenaires institutionnels. Une vue globale de la plateforme (toutes les écoles) a donc un sens. Mais le sujet ne définit que trois rôles (agent, responsable, parent) et demande de construire « ce module en version réduite ».
+
+**Retenu.** Passage ne gère qu'un établissement à la fois : chaque requête est filtrée par l'établissement de la personne connectée. La création des établissements et des comptes responsables, ainsi que la vue globale, relèvent de la plateforme SchoolLogs (ici, le script de données de départ). Le modèle est déjà prêt pour plusieurs établissements (`establishmentId` sur chaque table, testé par le cloisonnement entre écoles).
+
+**Si on l'ajoutait**, ce serait avec le moindre privilège : un rôle `PLATFORM_ADMIN` qui ne voit que des chiffres agrégés par établissement (élèves, taux de présence, anomalies, coût de l'IA), jamais de données nominatives d'élèves ; un accès exceptionnel aux données d'une école seulement avec un motif tracé dans le journal d'audit ; une double authentification obligatoire.
+
+**Écarté.** Un super administrateur qui voit toutes les données, codé dans le temps du test : c'est le compte le plus dangereux du système, car il contourne par définition le cloisonnement entre écoles. Un oubli dans une seule route exposerait les données de tous les établissements, pour une fonctionnalité que le sujet ne demande pas.
