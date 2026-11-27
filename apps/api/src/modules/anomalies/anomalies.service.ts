@@ -45,28 +45,47 @@ export async function raiseAnomaly(input: NewAnomaly): Promise<Anomaly | null> {
   return anomaly;
 }
 
-/** Jour férié pour l'établissement, ou exception individuelle pour l'élève, à cette date. */
-export async function hasDayException(
+/**
+ * Ce que couvrent les exceptions du jour pour cet élève (voir DECISIONS D18) :
+ * - 'DAY'  : jour férié ou absence justifiée, toute la journée est excusée ;
+ * - 'EXIT' : sortie anticipée autorisée, seule la sortie (dernière étape) l'est ;
+ *   ce qui précède (bus, entrée) compte toujours ;
+ * - null   : aucune exception.
+ */
+export async function dayExceptionScope(
   establishmentId: string,
   studentId: string,
   dateKey: string,
-): Promise<boolean> {
-  const count = await prisma.dayException.count({
+): Promise<'DAY' | 'EXIT' | null> {
+  const exceptions = await prisma.dayException.findMany({
     where: {
       establishmentId,
       date: dateFromKey(dateKey),
       OR: [{ studentId }, { type: 'HOLIDAY', studentId: null }],
     },
+    select: { type: true },
   });
-  return count > 0;
+  if (exceptions.some((e) => e.type !== 'EARLY_EXIT_AUTHORIZED')) return 'DAY';
+  return exceptions.length > 0 ? 'EXIT' : null;
+}
+
+/** Identifiant de la dernière étape de l'itinéraire de l'élève ce jour-là : la sortie. */
+async function lastStepIdOfDay(studentId: string, isoWeekday: number): Promise<string | null> {
+  const last = await prisma.routeStep.findFirst({
+    where: { route: { studentId }, days: { has: isoWeekday } },
+    orderBy: { position: 'desc' },
+    select: { id: true },
+  });
+  return last?.id ?? null;
 }
 
 const pairKey = (a: string, b: string) => (a < b ? `${a}:${b}` : `${b}:${a}`);
 
 /**
- * Règles évaluées à la réception d'un passage. Les exceptions du jour (férié,
- * absence justifiée, sortie anticipée autorisée) suspendent les règles liées à
- * l'itinéraire ; les alertes de sécurité du badge restent toujours actives.
+ * Règles évaluées à la réception d'un passage. Un jour férié ou une absence
+ * justifiée suspend les règles liées à l'itinéraire ; une sortie anticipée
+ * n'excuse qu'un passage en avance à la sortie (D18). Les alertes de sécurité
+ * du badge restent toujours actives.
  */
 export async function evaluatePassage(passage: Passage, timezone: string): Promise<void> {
   if (!passage.studentId) return;
@@ -138,7 +157,8 @@ export async function evaluatePassage(passage: Passage, timezone: string): Promi
     }
   }
 
-  if (await hasDayException(student.establishmentId, studentId, dateKey)) return;
+  const exception = await dayExceptionScope(student.establishmentId, studentId, dateKey);
+  if (exception === 'DAY') return;
 
   // Double scan : un autre passage accepté du même élève à moins de N secondes.
   const doubleMs = env.DOUBLE_SCAN_SECONDS * 1000;
@@ -192,6 +212,16 @@ export async function evaluatePassage(passage: Passage, timezone: string): Promi
   const distance = (s: { startMinute: number; endMinute: number }) =>
     minuteOfDay < s.startMinute ? s.startMinute - minuteOfDay : minuteOfDay - s.endMinute;
   const nearest = [...steps].sort((a, b) => distance(a) - distance(b))[0]!;
+  const early = minuteOfDay < nearest.startMinute;
+  // Sortie anticipée autorisée : passer en avance à la sortie est justement ce qui
+  // est permis. Un passage en retard, ou à une autre étape, reste signalé.
+  if (
+    exception === 'EXIT' &&
+    early &&
+    nearest.id === (await lastStepIdOfDay(studentId, isoWeekday))
+  ) {
+    return;
+  }
   await raiseAnomaly({
     ...base,
     type: 'OUT_OF_WINDOW',
@@ -201,7 +231,7 @@ export async function evaluatePassage(passage: Passage, timezone: string): Promi
       checkpointLabel: label,
       minute: minuteOfDay,
       window: { start: nearest.startMinute, end: nearest.endMinute },
-      direction: minuteOfDay < nearest.startMinute ? 'EARLY' : 'LATE',
+      direction: early ? 'EARLY' : 'LATE',
       stepPosition: nearest.position,
     },
   });
@@ -272,7 +302,13 @@ export async function detectMissedCheckpoints(
         const dedupeKey = `MISSED:${step.id}:${dateKey}`;
         const exists = await prisma.anomaly.findUnique({ where: { dedupeKey } });
         if (exists) continue;
-        if (await hasDayException(est.id, studentId, dateKey)) continue;
+        const exception = await dayExceptionScope(est.id, studentId, dateKey);
+        if (exception === 'DAY') continue;
+        // Sortie anticipée : l'élève a pu partir avant la plage de sortie ; les
+        // étapes du matin restent attendues.
+        if (exception === 'EXIT' && step.id === (await lastStepIdOfDay(studentId, weekday))) {
+          continue;
+        }
         // Un passage hors fenêtre déjà signalé pour cette étape suffit : pas de double alerte.
         const outOfWindow = await prisma.anomaly.count({
           where: { routeStepId: step.id, date: dateFromKey(dateKey), type: 'OUT_OF_WINDOW' },

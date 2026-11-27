@@ -201,3 +201,46 @@ describe('plafond de messages par élève et par jour', () => {
     );
   });
 });
+
+describe('sortie anticipée autorisée : seule la sortie est excusée (D18)', () => {
+  async function earlyExit(w: Awaited<ReturnType<typeof seedWorld>>) {
+    await prisma.dayException.create({
+      data: {
+        establishmentId: w.est.id,
+        studentId: w.students[0]!.id,
+        date: dateFromKey(DAY),
+        type: 'EARLY_EXIT_AUTHORIZED',
+        createdById: w.manager.id,
+      },
+    });
+  }
+  const awaAnomalies = (w: Awaited<ReturnType<typeof seedWorld>>, position: number) =>
+    prisma.anomaly.findMany({
+      where: { studentId: w.students[0]!.id, date: dateFromKey(DAY), routeStep: { position } },
+    });
+
+  it("le matin compte toujours ; l'absence de sortie est excusée", async () => {
+    const w = await seedWorld();
+    await earlyExit(w);
+    // Awa ne passe ni à l'entrée ni à la sortie.
+    await runSchedulerTick(new Date(localTime(DAY, 18, 0)));
+    const entry = await awaAnomalies(w, 1);
+    expect(entry.map((a) => a.type)).toEqual(['MISSED_CHECKPOINT']);
+    expect(await awaAnomalies(w, 2)).toHaveLength(0);
+  });
+
+  it('retard le matin signalé ; sortie avant la plage excusée ; sortie après la plage signalée', async () => {
+    const w = await seedWorld();
+    await earlyExit(w);
+    await scanAt(w, 0, w.entry.id, localTime(DAY, 7, 58), 1); // retard à l'entrée
+    expect((await awaAnomalies(w, 1)).map((a) => a.type)).toEqual(['OUT_OF_WINDOW']);
+
+    await scanAt(w, 0, w.exit.id, localTime(DAY, 11, 0), 2); // sortie anticipée
+    expect(await awaAnomalies(w, 2)).toHaveLength(0);
+
+    await scanAt(w, 0, w.exit.id, localTime(DAY, 23, 0), 3); // passage tardif
+    const late = await awaAnomalies(w, 2);
+    expect(late.map((a) => a.type)).toEqual(['OUT_OF_WINDOW']);
+    expect(late[0]!.details).toMatchObject({ direction: 'LATE' });
+  });
+});

@@ -146,3 +146,13 @@ Le sujet ne valorise pas l'hébergement. Une image Docker unique et un script d'
 **Écarté.** Payer l'abonnement Mistral (coût sans gain pour le sujet). Le SDK officiel du fournisseur (une dépendance de plus pour un seul appel HTTP). Google Gemini (requêtes gratuites réutilisées pour améliorer ses produits, compatibilité annoncée partielle). Rester uniquement en mode gabarit : acceptable, mais la synthèse rédigée par un modèle n'aurait jamais été démontrée.
 
 **Limite.** Les modèles gratuits de Groq changent de temps en temps : si `AI_MODEL` disparaît, l'appel échoue, la raison est journalisée et le gabarit prend le relais. Les tarifs `AI_PRICE_*` restent des estimations pour le plafond de dépense.
+
+## D18. La sortie anticipée n'excuse que la sortie (décision du candidat)
+
+**Problème.** Lors de la répétition sur téléphone, une élève avec une « sortie anticipée autorisée » a été scannée au portail de sortie à 23:00, sans anomalie. Le code traitait les trois exceptions de la même façon : toutes les anomalies d'itinéraire de la journée étaient suspendues, y compris un retard ou un bus manqué le matin, et un passage à 23:00 qui n'a rien d'anticipé.
+
+**Retenu.** Un jour férié et une absence justifiée excusent toujours toute la journée. Une sortie anticipée autorisée n'excuse que la **sortie**, c'est-à-dire la dernière étape de l'itinéraire du jour : pas d'alerte « passage manquant » à la sortie (l'élève a pu partir avant), ni pour un passage **avant** la plage de sortie. Tout ce qui précède (bus, entrée) compte normalement, et un passage **après** la plage de sortie reste signalé. Les alertes de sécurité du badge ne sont jamais suspendues. Deux tests d'intégration fixent la règle.
+
+**Écarté.** Ajouter une heure de sortie autorisée à l'exception : plus précis, mais une saisie de plus pour le responsable et un changement de schéma, pour un gain faible.
+
+**Limite.** La « sortie » est la dernière étape de l'itinéraire du jour : si une école plaçait un bus après le portail de sortie, c'est ce bus qui serait excusé. L'itinéraire type actuel (bus, entrée, sortie) n'est pas concerné.
