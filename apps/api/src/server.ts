@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
+import path from 'node:path';
 import { createApp } from './app.js';
-import { env } from './config/env.js';
+import { env, envDir } from './config/env.js';
 import { prisma } from './db/prisma.js';
 import { logger } from './lib/logger.js';
 import { startScheduler } from './worker/scheduler.js';
@@ -18,9 +19,10 @@ servers.push(
 
 // HTTPS optionnel : nécessaire pour la caméra et le NFC sur un téléphone du réseau local.
 if (env.HTTPS_KEY_PATH && env.HTTPS_CERT_PATH) {
+  // path.resolve laisse un chemin absolu tel quel et rattache un chemin relatif à la racine.
   const credentials = {
-    key: fs.readFileSync(env.HTTPS_KEY_PATH),
-    cert: fs.readFileSync(env.HTTPS_CERT_PATH),
+    key: fs.readFileSync(path.resolve(envDir, env.HTTPS_KEY_PATH)),
+    cert: fs.readFileSync(path.resolve(envDir, env.HTTPS_CERT_PATH)),
   };
   servers.push(
     https.createServer(credentials, app).listen(env.HTTPS_PORT, () => {

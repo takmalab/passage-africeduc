@@ -19,6 +19,13 @@ function findEnvFile(): string | undefined {
 const envFile = findEnvFile();
 if (envFile) loadEnv({ path: envFile, quiet: true });
 
+/**
+ * Dossier de référence des chemins relatifs du .env (ex. HTTPS_KEY_PATH=certs/lan.key) :
+ * celui du fichier .env, c'est-à-dire la racine du projet. Sans cela, le chemin dépendrait
+ * du dossier de lancement (npm start s'exécute dans apps/api).
+ */
+export const envDir = envFile ? path.dirname(envFile) : process.cwd();
+
 const bool = z
   .enum(['true', 'false', '1', '0', ''])
   .optional()

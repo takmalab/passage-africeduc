@@ -12,6 +12,10 @@ npm run build && npm start
 
 Le téléphone (connecté au partage de connexion du PC) ouvre `https://<ip-du-pc>:8443` et accepte l'avertissement. Caméra et NFC fonctionnent (HTTPS).
 
+Les chemins relatifs du `.env` (`certs/lan.key`) sont lus depuis la racine du projet, quel que soit le dossier de lancement.
+
+**Limite d'un certificat auto-signé.** Chrome ouvre la page après l'avertissement, mais refuse d'**installer** l'application et d'activer son mode hors ligne complet (service worker) sur un certificat non reconnu. La file de scans hors ligne fonctionne tant que la page reste ouverte ; elle ne se rouvre pas sans réseau. Pour un mode hors ligne complet : créer une autorité locale avec `mkcert`, et installer son certificat racine sur le téléphone (Paramètres > Sécurité > Installer un certificat).
+
 ## Base en ligne en une commande
 
 ```bash
