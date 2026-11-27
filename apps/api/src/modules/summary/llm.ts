@@ -53,7 +53,12 @@ export class MistralClient implements LlmClient {
           },
         }),
       });
-      if (!response.ok) throw new Error(`Mistral a répondu ${response.status}`);
+      if (!response.ok) {
+        // On garde l'explication du fournisseur (ex. « No active subscription ») pour le
+        // journal AiCall : sans elle, on ne sait pas pourquoi le modèle est indisponible.
+        const reason = await providerReason(response, this.apiKey);
+        throw new Error(`Mistral a répondu ${response.status}${reason ? ` : ${reason}` : ''}`);
+      }
       const data = (await response.json()) as {
         choices?: { message?: { content?: string } }[];
         usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -72,6 +77,24 @@ export class MistralClient implements LlmClient {
       clearTimeout(timer);
     }
   }
+}
+
+/**
+ * Explication d'une réponse d'erreur du fournisseur : le champ `message` (ou `detail`)
+ * si la réponse est du JSON, sinon le texte brut. Courte (journal limité à 200 caractères)
+ * et sans jamais la clé d'API, au cas où le fournisseur la renverrait.
+ */
+async function providerReason(response: Response, apiKey: string): Promise<string> {
+  const raw = await response.text().catch(() => '');
+  let reason = raw;
+  try {
+    const data = JSON.parse(raw) as { message?: unknown; detail?: unknown };
+    const field = data.message ?? data.detail;
+    if (field !== undefined) reason = typeof field === 'string' ? field : JSON.stringify(field);
+  } catch {
+    // Pas du JSON : on garde le texte tel quel.
+  }
+  return reason.split(apiKey).join('***').replace(/\s+/g, ' ').trim().slice(0, 150);
 }
 
 let override: LlmClient | null | undefined;

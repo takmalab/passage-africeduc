@@ -174,7 +174,13 @@ export function SummaryPage() {
                   {usage.data.calls.map((c) => (
                     <tr key={c.id} title={c.errorMessage ?? ''}>
                       <td className="py-1 pr-3">{fmtDateTime(c.createdAt)}</td>
-                      <td className="pr-3">{c.status}</td>
+                      <td className="pr-3">
+                        {c.status}
+                        {/* Raison donnée par le fournisseur (ex. abonnement inactif). */}
+                        {c.errorMessage && (
+                          <span className="block text-xs text-red-700">{c.errorMessage}</span>
+                        )}
+                      </td>
                       <td className="pr-3">{c.attempt}</td>
                       <td className="pr-3">
                         {c.inputTokens} / {c.outputTokens}
