@@ -167,7 +167,7 @@ export function AgentPage() {
   );
 
   return (
-    <Layout title="Agent de portail">
+    <Layout title="Agent de portail" motif={3}>
       <div className="flex flex-wrap items-center gap-2">
         {online ? (
           <Pill tone="good">
@@ -257,11 +257,11 @@ export function AgentPage() {
           <div
             role="status"
             aria-live="assertive"
-            className="fixed inset-x-6 top-1/3 z-50 flex flex-col items-center gap-2 rounded-2xl bg-teal-700 p-6 text-center text-white shadow-2xl"
+            className="fixed inset-x-6 top-1/3 z-50 flex flex-col items-center gap-2 rounded-2xl bg-brand-700 p-6 text-center text-white shadow-2xl"
           >
             <CheckCircle2 className="size-16" aria-hidden />
             <p className="text-3xl font-bold">{flash}</p>
-            <p className="text-base text-teal-50">
+            <p className="text-base text-brand-50">
               {online
                 ? 'Vérification par le serveur…'
                 : 'Gardée sur le téléphone, envoi au retour du réseau'}
@@ -321,7 +321,7 @@ function ModeButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-sm ${active ? 'border-teal-600 bg-teal-50 font-medium text-teal-800' : 'border-slate-300 text-slate-700'}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-sm ${active ? 'border-brand-600 bg-brand-50 font-medium text-brand-800' : 'border-slate-300 text-slate-700'}`}
     >
       {icon}
       {label}
@@ -364,9 +364,9 @@ function NfcPanel({ onCode, disabled }: { onCode: (c: string) => void; disabled:
           Démarrer la lecture NFC
         </Button>
       ) : (
-        <div className="rounded-xl border-2 border-dashed border-teal-500 bg-teal-50 p-6">
-          <Nfc className="mx-auto size-10 text-teal-700" aria-hidden />
-          <p className="mt-2 font-medium text-teal-900">Approchez la carte du dos du téléphone</p>
+        <div className="rounded-xl border-2 border-dashed border-brand-500 bg-brand-50 p-6">
+          <Nfc className="mx-auto size-10 text-brand-700" aria-hidden />
+          <p className="mt-2 font-medium text-brand-900">Approchez la carte du dos du téléphone</p>
         </div>
       )}
       {error && <p className="text-sm text-red-700">{error}</p>}

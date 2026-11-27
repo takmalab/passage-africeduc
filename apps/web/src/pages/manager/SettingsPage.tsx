@@ -23,7 +23,7 @@ export function SettingsPage() {
         <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3">
           <input
             type="checkbox"
-            className="mt-1 size-4 accent-teal-700"
+            className="mt-1 size-4 accent-brand-700"
             checked={establishment.allowPrintedBadges}
             onChange={async (e) => {
               try {

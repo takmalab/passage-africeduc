@@ -76,7 +76,7 @@ export function StudentDetailPage() {
     <>
       <Link
         to="/responsable/eleves"
-        className="inline-flex items-center gap-1 text-sm text-teal-800"
+        className="inline-flex items-center gap-1 text-sm text-brand-800"
       >
         <ArrowLeft className="size-4" aria-hidden />
         Élèves
@@ -209,7 +209,7 @@ export function StudentDetailPage() {
         <label className="mb-3 flex items-center gap-2 text-sm">
           <input
             type="checkbox"
-            className="size-4 accent-teal-700"
+            className="size-4 accent-brand-700"
             checked={!s.takesBus}
             disabled={busy}
             onChange={(e) =>

@@ -73,7 +73,7 @@ export function ChildPage() {
   if (loading) return <Spinner />;
   return (
     <>
-      <Link to="/parent" className="inline-flex items-center gap-1 text-sm text-teal-800">
+      <Link to="/parent" className="inline-flex items-center gap-1 text-sm text-brand-800">
         <ArrowLeft className="size-4" aria-hidden />
         Mes enfants
       </Link>

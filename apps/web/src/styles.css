@@ -1,8 +1,101 @@
 @import 'tailwindcss';
 
+/*
+ * Palette « terre et ocre », tirée des motifs de public/motifs. Une seule définition :
+ * les composants utilisent bg-brand-700, text-brand-800... (même échelle que Tailwind).
+ * Le vert et le rouge des verdicts restent ceux de Tailwind : ce sont des codes de sens.
+ */
+@theme {
+  --color-brand-50: #fdf6ee;
+  --color-brand-100: #f9e7d2;
+  --color-brand-200: #f1cba0;
+  --color-brand-300: #e6a865;
+  --color-brand-400: #d9883a;
+  --color-brand-500: #c06c24;
+  --color-brand-600: #a2541c;
+  --color-brand-700: #84411a; /* boutons : contraste 7:1 avec le blanc */
+  --color-brand-800: #6a3419;
+  --color-brand-900: #4a2414;
+  --color-plum-900: #2b1320; /* fond aubergine des motifs */
+  --color-sand: #f8f4ee; /* fond de page */
+}
+
+body {
+  background-color: var(--color-sand);
+  color: var(--color-slate-900);
+}
+
+/*
+ * Motif d'arrière-plan, discret : image très transparente, désaturée, estompée au
+ * centre (dégradé) pour garder le contenu lisible. Couche fixe, derrière tout,
+ * sans effet sur les clics. Image absente (hors ligne) : simple fond uni.
+ */
+.motif-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.motif-layer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--motif);
+  background-size: 900px auto;
+  background-repeat: repeat;
+  opacity: 0.07;
+  filter: grayscale(1) sepia(0.5) contrast(0.9);
+}
+.motif-layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    var(--color-sand) 0%,
+    color-mix(in srgb, var(--color-sand) 70%, transparent) 55%,
+    transparent 100%
+  );
+}
+.motif-1 {
+  --motif: url('/motifs/motif-1.webp');
+}
+.motif-3 {
+  --motif: url('/motifs/motif-3.webp');
+}
+
+/*
+ * Page de connexion : motif « école » (icônes Lucide, licence ISC, voir
+ * public/motifs/ecole.svg) en traits ocre très transparents, sur un dégradé aubergine.
+ */
+.login-backdrop {
+  background-color: var(--color-plum-900);
+  background-image:
+    url('/motifs/ecole.svg'),
+    linear-gradient(135deg, var(--color-plum-900), var(--color-brand-900));
+  background-size:
+    340px 340px,
+    cover;
+}
+
+/* Liseré dégradé sous l'en-tête. */
+.brand-stripe {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--color-brand-700),
+    var(--color-brand-400),
+    #b83a2e,
+    var(--color-brand-700)
+  );
+}
+
 @media print {
   body * {
     visibility: hidden;
+  }
+  .motif-layer {
+    display: none;
   }
   #printable-card,
   #printable-card * {

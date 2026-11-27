@@ -107,7 +107,7 @@ export function RouteEditor({ initial, onSaved }: { initial: Step[]; onSaved: ()
                   onClick={() =>
                     update(i, { days: on ? s.days.filter((x) => x !== day) : [...s.days, day] })
                   }
-                  className={`size-8 rounded-full text-xs font-medium ${on ? 'bg-teal-700 text-white' : 'bg-slate-100 text-slate-600'}`}
+                  className={`size-8 rounded-full text-xs font-medium ${on ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-600'}`}
                 >
                   {label}
                 </button>

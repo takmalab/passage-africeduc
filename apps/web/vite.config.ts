@@ -17,8 +17,8 @@ export default defineConfig({
         lang: 'fr',
         start_url: '/',
         display: 'standalone',
-        background_color: '#f8fafc',
-        theme_color: '#0f766e',
+        background_color: '#f8f4ee',
+        theme_color: '#84411a',
         icons: [
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
@@ -26,7 +26,8 @@ export default defineConfig({
       },
       workbox: {
         // L'application entière est mise en cache : l'écran de scan s'ouvre sans réseau.
-        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // Motifs WebP (249 Ko) inclus : l'apparence reste la même hors ligne.
+        globPatterns: ['**/*.{js,css,html,svg,woff2}', 'motifs/*.webp'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         // Les données (API) ne sont jamais mises en cache par le service worker :

@@ -4,11 +4,12 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-teal-700 text-white hover:bg-teal-800 disabled:bg-teal-700/50',
+  primary:
+    'bg-brand-700 text-white shadow-sm shadow-brand-900/20 hover:bg-brand-800 disabled:bg-brand-700/50',
   secondary:
-    'bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 disabled:opacity-50',
+    'bg-white/80 text-slate-800 border border-slate-300 hover:border-brand-300 hover:bg-brand-50 disabled:opacity-50',
   danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-600/50',
-  ghost: 'text-slate-700 hover:bg-slate-100',
+  ghost: 'text-slate-700 hover:bg-brand-50 hover:text-brand-800',
 };
 
 export function Button({
@@ -22,7 +23,7 @@ export function Button({
     <button
       {...props}
       disabled={props.disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:outline-none ${VARIANTS[variant]} ${className}`}
     >
       {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
       {children}
@@ -42,10 +43,12 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>
+    <section
+      className={`rounded-2xl border border-white/70 bg-white/85 p-5 shadow-[0_1px_3px_rgb(74_36_20/0.06),0_8px_24px_-12px_rgb(74_36_20/0.15)] backdrop-blur-sm ${className}`}
+    >
       {(title || actions) && (
         <header className="mb-3 flex items-center justify-between gap-2">
-          {title && <h2 className="text-base font-semibold">{title}</h2>}
+          {title && <h2 className="text-base font-semibold tracking-tight">{title}</h2>}
           {actions}
         </header>
       )}
@@ -99,10 +102,10 @@ export function Empty({ children }: { children: ReactNode }) {
 export function Spinner() {
   return (
     <div className="flex justify-center py-10" aria-label="Chargement">
-      <Loader2 className="size-6 animate-spin text-teal-700" />
+      <Loader2 className="size-6 animate-spin text-brand-700" />
     </div>
   );
 }
 
 export const inputClass =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20';
+  'w-full rounded-xl border border-slate-300 bg-white/90 px-3 py-2.5 text-sm transition-colors focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20';

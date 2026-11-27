@@ -11,9 +11,10 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div className="flex min-h-dvh items-center justify-center p-4">
+    // Fond aubergine et motif coloré (styles.css, .login-backdrop) : première impression.
+    <div className="login-backdrop flex min-h-dvh items-center justify-center p-4">
       <form
-        className="w-full max-w-sm space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="w-full max-w-sm space-y-5 rounded-3xl border border-white/20 bg-white/95 p-7 shadow-2xl shadow-black/40 backdrop-blur"
         onSubmit={async (e) => {
           e.preventDefault();
           setLoading(true);
@@ -27,10 +28,12 @@ export function LoginPage() {
           }
         }}
       >
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="size-8 text-teal-700" aria-hidden />
+        <div className="flex items-center gap-3">
+          <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-800 text-white shadow-md">
+            <ShieldCheck className="size-6" aria-hidden />
+          </span>
           <div>
-            <h1 className="text-lg font-semibold">Passage</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Passage</h1>
             <p className="text-sm text-slate-500">Suivi des passages des élèves</p>
           </div>
         </div>
