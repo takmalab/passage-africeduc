@@ -118,3 +118,11 @@ Le sujet ne valorise pas l'hébergement. Une image Docker unique et un script d'
 - Un itinéraire unique lu directement par le moteur, sans copie par élève : un élève qui ne prend pas le bus ne pourrait plus être signalé « hors itinéraire » s'il badge au bus, et la refonte du moteur d'anomalies était trop risquée à deux jours de l'échéance.
 
 **Limites.** Pas d'itinéraire différent selon la classe (par exemple une sortie plus tôt le mercredi pour les 6e) ; les exceptions du jour (sortie anticipée autorisée) couvrent les cas individuels. La recopie se fait dans une transaction sur tous les élèves : suffisant pour quelques centaines d'élèves, à revoir au-delà.
+
+## D15. Résolution d'une anomalie : motif obligatoire, réservé à l'école (décision du candidat)
+
+**Problème.** Le sujet demande un « état de traitement » des anomalies. Le responsable pouvait passer une anomalie en « Résolue » d'un simple clic : on savait qui et quand (journal d'audit), mais jamais **pourquoi**. En cas de contestation d'un parent des mois plus tard, l'école n'aurait eu aucune explication.
+
+**Retenu.** « Vue » reste un simple clic (prise en charge). « Résolue » exige un **motif** de 3 à 200 caractères (par exemple « Mère appelée : élève malade ») : sans lui, le serveur refuse (400). Le motif est enregistré sur l'anomalie et dans le journal d'audit, avec l'auteur et l'heure. Il est **visible par l'école uniquement** : la requête du parent ne sélectionne pas ce champ, il voit seulement l'état « Résolue » (testé).
+
+**Écarté.** Motif facultatif : la raison se perd. Motif visible par le parent : il peut contenir une information sensible (santé, situation familiale), alors que le sujet exige des messages au parent sans donnée sensible.

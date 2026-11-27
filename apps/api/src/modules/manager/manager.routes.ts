@@ -288,11 +288,20 @@ managerRouter.get('/anomalies', async (req, res) => {
 
 managerRouter.patch('/anomalies/:id', async (req, res) => {
   const id = uuid.parse(req.params.id);
+  // « Vue » : simple prise en charge. « Résolue » : motif obligatoire (D15), pour savoir
+  // plus tard pourquoi l'anomalie a été close. Le motif reste interne à l'école.
   const body = z
-    .object({ status: z.enum(['ACKNOWLEDGED', 'RESOLVED']) })
+    .object({
+      status: z.enum(['ACKNOWLEDGED', 'RESOLVED']),
+      note: z.string().trim().min(3).max(200).optional(),
+    })
     .strict()
+    .refine((b) => b.status !== 'RESOLVED' || b.note !== undefined, {
+      message: 'Indiquez le motif de la résolution.',
+      path: ['note'],
+    })
     .parse(req.body);
-  await svc.updateAnomalyStatus(staffEstablishment(req), id, body.status);
+  await svc.updateAnomalyStatus(staffEstablishment(req), id, body.status, body.note);
   await audit(req, 'anomaly.status', 'Anomaly', id, body);
   res.status(204).end();
 });

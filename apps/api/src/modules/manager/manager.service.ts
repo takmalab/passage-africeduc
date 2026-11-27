@@ -278,10 +278,18 @@ export async function updateAnomalyStatus(
   establishmentId: string,
   id: string,
   status: Extract<AnomalyStatus, 'ACKNOWLEDGED' | 'RESOLVED'>,
+  note?: string,
 ) {
+  const resolved = status === 'RESOLVED';
   const res = await prisma.anomaly.updateMany({
+    // Filtre sur l'établissement DANS la requête : anomalie d'une autre école = 404.
     where: { id, establishmentId },
-    data: { status, resolvedAt: status === 'RESOLVED' ? new Date() : null },
+    data: {
+      status,
+      resolvedAt: resolved ? new Date() : null,
+      // Motif interne à l'école : jamais renvoyé au parent (voir parent.service.ts).
+      resolutionNote: resolved ? note : null,
+    },
   });
   if (res.count === 0) throw notFound();
 }

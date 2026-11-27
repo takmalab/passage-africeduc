@@ -55,13 +55,19 @@ export function TodayPage() {
   const passages = useApi<{ passages: Passage[] }>(`/manager/passages${q}`);
   const messages = useApi<{ messages: Message[] }>(`/manager/messages${q}`);
   const [error, setError] = useState<unknown>(null);
+  // Anomalie en cours de résolution (champ « motif » ouvert) et motif saisi.
+  const [resolving, setResolving] = useState<string | null>(null);
+  const [note, setNote] = useState('');
 
-  const setStatus = async (id: string, status: 'ACKNOWLEDGED' | 'RESOLVED') => {
+  const setStatus = async (id: string, status: 'ACKNOWLEDGED' | 'RESOLVED', motif?: string) => {
+    setError(null);
     try {
-      await patch(`/manager/anomalies/${id}`, { status });
+      await patch(`/manager/anomalies/${id}`, { status, note: motif });
+      setResolving(null);
+      setNote('');
       anomalies.reload();
     } catch (err) {
-      setError(err);
+      setError(err); // ex. « Indiquez le motif de la résolution. »
     }
   };
 
@@ -114,6 +120,7 @@ export function TodayPage() {
                     <Button
                       variant="ghost"
                       className="!px-2 !py-1"
+                      title="Marquer comme prise en charge"
                       onClick={() => void setStatus(a.id, 'ACKNOWLEDGED')}
                     >
                       <Check className="size-4" aria-hidden />
@@ -124,13 +131,50 @@ export function TodayPage() {
                     <Button
                       variant="ghost"
                       className="!px-2 !py-1"
-                      onClick={() => void setStatus(a.id, 'RESOLVED')}
+                      title="Marquer comme réglée, avec un motif"
+                      onClick={() => {
+                        setResolving(a.id);
+                        setNote('');
+                      }}
                     >
                       <CheckCheck className="size-4" aria-hidden />
                       Résolue
                     </Button>
                   )}
                 </span>
+                {resolving === a.id && (
+                  // Motif obligatoire, visible par l'école uniquement (jamais par le parent).
+                  <form
+                    className="flex w-full gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void setStatus(a.id, 'RESOLVED', note);
+                    }}
+                  >
+                    <input
+                      className={inputClass}
+                      placeholder="Motif (ex. mère appelée : élève malade)"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      minLength={3}
+                      maxLength={200}
+                      aria-label="Motif de la résolution"
+                      autoFocus
+                      required
+                    />
+                    <Button type="submit" className="!py-1.5">
+                      Valider
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="!py-1.5"
+                      onClick={() => setResolving(null)}
+                    >
+                      Annuler
+                    </Button>
+                  </form>
+                )}
               </li>
             ))}
           </ul>
