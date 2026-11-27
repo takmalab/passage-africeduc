@@ -167,3 +167,25 @@ describe("itinéraire de l'établissement", () => {
     expect(unchanged.takesBus).toBe(true);
   });
 });
+
+describe("plages affichées sur le téléphone de l'agent", () => {
+  it("chaque point est livré avec sa plage, le fuseau de l'école et l'heure du serveur", async () => {
+    const w = await seedWorld();
+    const manager = await loggedIn('responsable');
+    // Itinéraire sans bus : le point « Bus » n'a pas de plage.
+    await manager.put('/api/manager/route', { steps: schoolRoute(w).slice(1) });
+
+    const agent = await loggedIn('agent');
+    const before = Date.now();
+    const res = await agent.get('/api/agent/checkpoints');
+    expect(res.status).toBe(200);
+    expect(res.body.timezone).toBe('Africa/Douala');
+    expect(res.body.serverTime).toBeGreaterThanOrEqual(before);
+    const byLabel = Object.fromEntries(
+      res.body.checkpoints.map((c: { label: string; window: unknown }) => [c.label, c.window]),
+    );
+    expect(byLabel['Portail entrée']).toEqual({ startMinute: 420, endMinute: 465, days: WEEKDAYS });
+    expect(byLabel['Portail sortie']).toEqual({ startMinute: 930, endMinute: 975, days: WEEKDAYS });
+    expect(byLabel['Bus']).toBeNull();
+  });
+});

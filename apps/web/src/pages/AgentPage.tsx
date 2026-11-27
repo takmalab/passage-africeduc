@@ -11,7 +11,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { SyncResponse } from '@passage/shared';
+import { formatMinute, type SyncResponse } from '@passage/shared';
 import { ApiError, get, NetworkError, post } from '../api';
 import { useAuth } from '../auth';
 import { Layout } from '../components/Layout';
@@ -22,8 +22,15 @@ import { db, getMeta, setMeta } from '../offline/db';
 import { SyncEngine } from '../offline/sync-engine';
 import { isNfcSupported, startNfcReading } from '../scanner/nfc';
 import { QrCamera } from '../scanner/QrCamera';
+import { type CheckpointWindow, formatCountdown, windowStatus } from '../window-status';
 
-type Checkpoint = { id: string; label: string; type: 'GATE' | 'BUS' };
+type Checkpoint = {
+  id: string;
+  label: string;
+  type: 'GATE' | 'BUS';
+  window: CheckpointWindow | null;
+};
+type CheckpointsResponse = { checkpoints: Checkpoint[]; timezone: string; serverTime: number };
 type Mode = 'nfc' | 'qr' | 'manual';
 
 const engine = new SyncEngine(db, (body) => post<SyncResponse>('/agent/sync', body));
@@ -41,6 +48,9 @@ export function AgentPage() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  // Fuseau de l'école et décalage « heure serveur - heure du téléphone » (pour le compte à rebours).
+  const [timezone, setTimezone] = useState('Africa/Douala');
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
 
   const pending = useLiveQuery(() => db.queue.count(), [], 0);
   const results = useLiveQuery(
@@ -54,13 +64,20 @@ export function AgentPage() {
     void (async () => {
       const cached = (await getMeta<Checkpoint[]>('checkpoints')) ?? [];
       setCheckpoints(cached);
+      setTimezone((await getMeta<string>('timezone')) ?? 'Africa/Douala');
+      setClockOffsetMs((await getMeta<number>('clockOffsetMs')) ?? 0);
       setCheckpointId((await getMeta<string>('checkpointId')) ?? cached[0]?.id ?? '');
       try {
-        const { checkpoints: fresh } = await get<{ checkpoints: Checkpoint[] }>(
-          '/agent/checkpoints',
-        );
+        const res = await get<CheckpointsResponse>('/agent/checkpoints');
+        const fresh = res.checkpoints;
+        // Si l'horloge du téléphone est fausse, le compte à rebours suit quand même l'heure du serveur.
+        const offset = res.serverTime - Date.now();
         setCheckpoints(fresh);
+        setTimezone(res.timezone);
+        setClockOffsetMs(offset);
         await setMeta('checkpoints', fresh);
+        await setMeta('timezone', res.timezone);
+        await setMeta('clockOffsetMs', offset);
         setCheckpointId((id) => id || fresh[0]?.id || '');
       } catch {
         /* hors ligne : on garde le cache */
@@ -68,10 +85,11 @@ export function AgentPage() {
     })();
   }, []);
 
-  const label = useMemo(
-    () => checkpoints.find((c) => c.id === checkpointId)?.label ?? '',
+  const current = useMemo(
+    () => checkpoints.find((c) => c.id === checkpointId),
     [checkpoints, checkpointId],
   );
+  const label = current?.label ?? '';
 
   const sync = useCallback(async () => {
     if (!navigator.onLine) return;
@@ -172,6 +190,10 @@ export function AgentPage() {
             </option>
           ))}
         </select>
+
+        {current && (
+          <WindowBanner window={current.window} timezone={timezone} clockOffsetMs={clockOffsetMs} />
+        )}
 
         <div className="mt-4 grid grid-cols-3 gap-2" role="tablist" aria-label="Mode de lecture">
           <ModeButton
@@ -336,5 +358,58 @@ function ManualPanel({ onCode, disabled }: { onCode: (c: string) => void; disabl
         Valider
       </Button>
     </form>
+  );
+}
+
+/**
+ * Plage horaire du point choisi, avec compte à rebours mis à jour chaque seconde.
+ * L'heure utilisée est celle du serveur (heure du téléphone + décalage mesuré).
+ */
+function WindowBanner({
+  window: range,
+  timezone,
+  clockOffsetMs,
+}: {
+  window: CheckpointWindow | null;
+  timezone: string;
+  clockOffsetMs: number;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const status = windowStatus(now + clockOffsetMs, timezone, range);
+  if (status.state === 'none' || !range) return null;
+  const plage = `${formatMinute(range.startMinute)} – ${formatMinute(range.endMinute)}`;
+
+  const tone =
+    status.state === 'open'
+      ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+      : 'bg-slate-50 text-slate-700 border-slate-200';
+  return (
+    <p
+      className={`mt-3 flex items-center gap-2 rounded-lg border p-2 text-sm ${tone}`}
+      role="status"
+    >
+      <Clock className="size-4 shrink-0" aria-hidden />
+      {status.state === 'open' && (
+        <span>
+          <span className="font-medium">Plage ouverte {plage}</span> · ferme dans{' '}
+          <span className="font-mono font-semibold tabular-nums">
+            {formatCountdown(status.seconds)}
+          </span>
+        </span>
+      )}
+      {status.state === 'before' && (
+        <span>
+          Plage {plage} · ouvre dans{' '}
+          <span className="font-mono tabular-nums">{formatCountdown(status.seconds)}</span>
+        </span>
+      )}
+      {status.state === 'closed' && <span>Plage terminée ({plage})</span>}
+      {status.state === 'not-today' && <span>Pas de plage aujourd’hui ({plage})</span>}
+    </p>
   );
 }
