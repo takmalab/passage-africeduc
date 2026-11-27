@@ -18,7 +18,7 @@ import { Layout } from '../components/Layout';
 import { Button, Card, ErrorBox, inputClass, Pill } from '../components/ui';
 import { useOnline } from '../hooks';
 import { fmtTime, refusalLabel } from '../labels';
-import { db, getMeta, setMeta } from '../offline/db';
+import { db, getMeta, setMeta, type ScanResult } from '../offline/db';
 import { SyncEngine } from '../offline/sync-engine';
 import { isNfcSupported, startNfcReading } from '../scanner/nfc';
 import { QrCamera } from '../scanner/QrCamera';
@@ -32,6 +32,9 @@ type Checkpoint = {
 };
 type CheckpointsResponse = { checkpoints: Checkpoint[]; timezone: string; serverTime: number };
 type Mode = 'nfc' | 'qr' | 'manual';
+
+/** Au-delà de cet âge, un verdict n'est plus affiché en grand (scan fait hors ligne). */
+const VERDICT_MAX_AGE_MS = 30_000;
 
 const engine = new SyncEngine(db, (body) => post<SyncResponse>('/agent/sync', body));
 
@@ -48,6 +51,13 @@ export function AgentPage() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  // Minuterie du message « Carte lue » : relancée à chaque lecture, pour qu'une carte lue
+  // juste après la précédente garde son message affiché le temps prévu.
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Verdict du serveur affiché en grand (vert : accepté, rouge : refusé).
+  const [verdict, setVerdict] = useState<ScanResult | null>(null);
+  const verdictTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastVerdictId = useRef<string | null>(null);
   // Fuseau de l'école et décalage « heure serveur - heure du téléphone » (pour le compte à rebours).
   const [timezone, setTimezone] = useState('Africa/Douala');
   const [clockOffsetMs, setClockOffsetMs] = useState(0);
@@ -58,6 +68,25 @@ export function AgentPage() {
     [],
     [],
   );
+
+  // Quand le dernier scan reçoit son verdict, on l'affiche en grand. Seulement pour un scan
+  // récent : au retour du réseau, les verdicts des scans faits hors ligne il y a longtemps
+  // restent dans la liste « Derniers passages », sans surgir en plein écran.
+  useEffect(() => {
+    const latest = results?.[0];
+    if (!latest || latest.status === 'pending' || lastVerdictId.current === latest.localEventId) {
+      return;
+    }
+    lastVerdictId.current = latest.localEventId;
+    if (Date.now() - latest.at > VERDICT_MAX_AGE_MS) return;
+    // Réaction à un changement de la base locale (IndexedDB) : mise à jour d'état voulue.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setVerdict(latest);
+    setFlash(null); // le verdict remplace « Carte lue »
+    navigator.vibrate?.(latest.status === 'accepted' ? 80 : [200, 100, 200]);
+    clearTimeout(verdictTimer.current);
+    verdictTimer.current = setTimeout(() => setVerdict(null), 2500);
+  }, [results]);
 
   // Points de contrôle : depuis le serveur si possible, sinon depuis le cache local.
   useEffect(() => {
@@ -130,7 +159,8 @@ export function AgentPage() {
       await engine.enqueue({ rawCode: rawCode.trim(), checkpointId }, label);
       setFlash('Carte lue');
       navigator.vibrate?.(80);
-      setTimeout(() => setFlash(null), 1200);
+      clearTimeout(flashTimer.current);
+      flashTimer.current = setTimeout(() => setFlash(null), 1500);
       void sync();
     },
     [checkpointId, label, sync],
@@ -221,13 +251,22 @@ export function AgentPage() {
           {mode === 'qr' && checkpointId && <QrCamera onCode={onCode} />}
           {mode === 'manual' && <ManualPanel onCode={onCode} disabled={!checkpointId} />}
         </div>
-        {flash && (
-          <p
-            className="mt-3 rounded-lg bg-teal-50 p-2 text-center text-sm font-medium text-teal-800"
+        {verdict && <VerdictOverlay result={verdict} />}
+        {flash && !verdict && (
+          // Grand message au centre de l'écran : lisible d'un coup d'œil au portail.
+          <div
             role="status"
+            aria-live="assertive"
+            className="fixed inset-x-6 top-1/3 z-50 flex flex-col items-center gap-2 rounded-2xl bg-teal-700 p-6 text-center text-white shadow-2xl"
           >
-            {flash}
-          </p>
+            <CheckCircle2 className="size-16" aria-hidden />
+            <p className="text-3xl font-bold">{flash}</p>
+            <p className="text-base text-teal-50">
+              {online
+                ? 'Vérification par le serveur…'
+                : 'Gardée sur le téléphone, envoi au retour du réseau'}
+            </p>
+          </div>
         )}
       </Card>
 
@@ -411,5 +450,27 @@ function WindowBanner({
       {status.state === 'closed' && <span>Plage terminée ({plage})</span>}
       {status.state === 'not-today' && <span>Pas de plage aujourd’hui ({plage})</span>}
     </p>
+  );
+}
+
+/** Verdict en grand : prénom de l'élève (contrôle visuel par l'agent) ou motif du refus. */
+function VerdictOverlay({ result }: { result: ScanResult }) {
+  const accepted = result.status === 'accepted';
+  return (
+    <div
+      role="alert"
+      className={`fixed inset-x-6 top-1/3 z-50 flex flex-col items-center gap-2 rounded-2xl p-6 text-center text-white shadow-2xl ${accepted ? 'bg-emerald-600' : 'bg-red-600'}`}
+    >
+      {accepted ? (
+        <CheckCircle2 className="size-16" aria-hidden />
+      ) : (
+        <XCircle className="size-16" aria-hidden />
+      )}
+      <p className="text-3xl font-bold">{accepted ? 'Acceptée' : 'Refusée'}</p>
+      <p className="text-2xl font-semibold">
+        {accepted ? (result.firstName ?? '') : refusalLabel(result.reason)}
+      </p>
+      <p className="text-base opacity-90">{result.checkpointLabel}</p>
+    </div>
   );
 }
