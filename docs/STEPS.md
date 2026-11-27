@@ -61,7 +61,7 @@ npm run dev
 
 Ouvrir http://localhost:5173 et se connecter avec chaque compte (mot de passe `Passage2026!`) : `responsable`, `agent`, `parent.awa`, `parent.kevin`.
 
-- [ ] Responsable > Journée : choisir la date de la veille (journée de démo) : 5 anomalies, 17 passages.
+- [ ] Responsable > Journée : choisir la date de la veille (journée de démo) : 5 anomalies, 37 passages (20 élèves).
 - [ ] Responsable > Simulateur de carte : « Poser la carte de Awa », copier le code.
 - [ ] Agent (autre navigateur ou fenêtre privée) > Saisie : coller le code : **accepté**. Recoller le même code : **refusé, code déjà utilisé**.
 - [ ] Responsable > Synthèse IA : classe 3e A, date de la veille : phrase « Gabarit » (pas de clé).

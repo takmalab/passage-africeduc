@@ -115,6 +115,17 @@ async function main() {
     ['Grace', 'Atangana', c3b.id, false],
     ['Hervé', 'Djoumessi', c3b.id, false],
     ['Linda', 'Nkemdirim', c3b.id, false],
+    // 10 élèves de plus (20 cartes distinctes pour le scénario « 20 scans hors ligne »).
+    ['Aïcha', 'Bello', c3a.id, false],
+    ['Boris', 'Essomba', c3a.id, false],
+    ['Carine', 'Fouda', c3a.id, false],
+    ['Daniel', 'Mvondo', c3a.id, false],
+    ['Estelle', 'Ndzi', c3a.id, false],
+    ['Fabrice', 'Owona', c3b.id, false],
+    ['Gaëlle', 'Tsafack', c3b.id, false],
+    ['Ibrahim', 'Moussa', c3b.id, false],
+    ['Joëlle', 'Ebode', c3b.id, false],
+    ['Loïc', 'Nana', c3b.id, false],
   ];
 
   type SeededStudent = Awaited<ReturnType<typeof prisma.student.create>> & {
@@ -239,6 +250,15 @@ async function main() {
     ['Hervé', 55],
   ] as const) {
     await scan(n, exit.id, at(15, m));
+  }
+
+  // Les 10 derniers élèves ont une journée sans histoire (entrée et sortie dans les plages) :
+  // les 5 anomalies de démonstration ci-dessus restent les seules de la journée.
+  const ordinary = ['Aïcha', 'Boris', 'Carine', 'Daniel', 'Estelle'];
+  const ordinaryB = ['Fabrice', 'Gaëlle', 'Ibrahim', 'Joëlle', 'Loïc'];
+  for (const [i, n] of [...ordinary, ...ordinaryB].entries()) {
+    await scan(n, entry.id, at(7, 2 + i * 2));
+    await scan(n, exit.id, at(15, 31 + i * 2));
   }
 
   // Détection des passages manquants comme si le programme de fond avait tourné ce soir-là.

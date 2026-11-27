@@ -89,7 +89,7 @@ Mot de passe commun : `Passage2026!` (variable `SEED_PASSWORD`).
 | `parent.awa`   | Parent           | Awa et Junior                                          |
 | `parent.kevin` | Parent           | Kevin et Clarisse                                      |
 
-Le seed crée 10 élèves, 3 points de contrôle, des itinéraires, une carte NFC **simulée** par élève et une journée complète de passages sur le dernier jour ouvré (avec retard, sortie hors plage, passages manquants, absence justifiée). La journée en cours reste vierge pour la démonstration.
+Le seed crée 20 élèves (deux classes), 3 points de contrôle, l'itinéraire de l'établissement, une carte NFC **simulée** par élève et une journée complète de passages sur le dernier jour ouvré (avec retard, sortie hors plage, passages manquants, absence justifiée). La journée en cours reste vierge pour la démonstration.
 
 ## Lancer les tests
 
