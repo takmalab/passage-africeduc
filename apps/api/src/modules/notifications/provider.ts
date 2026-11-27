@@ -1,3 +1,4 @@
+import { env, type Env } from '../../config/env.js';
 import { logger } from '../../lib/logger.js';
 
 export type OutgoingMessage = {
@@ -8,8 +9,9 @@ export type OutgoingMessage = {
 
 /**
  * Point d'extension pour un vrai fournisseur (SMS Orange / MTN, WhatsApp, e-mail).
- * Brancher un fournisseur = écrire une classe qui implémente cette interface
- * et l'ajouter dans `getProvider()`. Rien d'autre ne change.
+ * Brancher un fournisseur = écrire une classe qui implémente cette interface,
+ * l'ajouter à PROVIDERS ci-dessous et à la liste NOTIFY_PROVIDER de config/env.ts,
+ * puis régler NOTIFY_PROVIDER dans le .env. Rien d'autre ne change.
  */
 export interface NotificationProvider {
   readonly name: string;
@@ -28,7 +30,13 @@ export class OutboxProvider implements NotificationProvider {
   }
 }
 
-let provider: NotificationProvider = new OutboxProvider();
+/** Fournisseurs disponibles, choisis par NOTIFY_PROVIDER (validé au démarrage). */
+const PROVIDERS: Record<Env['NOTIFY_PROVIDER'], () => NotificationProvider> = {
+  outbox: () => new OutboxProvider(),
+  // Exemple : 'orange-sms': () => new OrangeSmsProvider(env.ORANGE_SMS_API_KEY),
+};
+
+let provider: NotificationProvider = PROVIDERS[env.NOTIFY_PROVIDER]();
 
 export function getProvider(): NotificationProvider {
   return provider;
