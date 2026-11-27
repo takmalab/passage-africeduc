@@ -15,7 +15,7 @@ const testEnv = {
   BADGE_KEYS_MASTER_KEY: '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff',
   SCHEDULER_ENABLED: 'false',
   CARD_SIMULATOR_ENABLED: 'true',
-  MISTRAL_API_KEY: '',
+  AI_API_KEY: '',
 };
 
 export default defineConfig({

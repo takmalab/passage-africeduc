@@ -72,11 +72,13 @@ const schema = z.object({
   NOTIFY_MAX_PER_STUDENT_PER_DAY: intFrom(3),
   NOTIFY_PROVIDER: z.enum(['outbox']).default('outbox'),
 
-  MISTRAL_API_KEY: z.string().optional().default(''),
-  MISTRAL_MODEL: z.string().default('mistral-small-latest'),
-  MISTRAL_BASE_URL: z.string().default('https://api.mistral.ai/v1'),
+  // Fournisseur de modèle au format « chat/completions » (Groq, Mistral...) : D17.
+  AI_API_KEY: z.string().optional().default(''),
+  AI_MODEL: z.string().default('openai/gpt-oss-120b'),
+  AI_BASE_URL: z.string().default('https://api.groq.com/openai/v1'),
   AI_TIMEOUT_MS: intFrom(8000),
-  AI_MAX_OUTPUT_TOKENS: intFrom(300),
+  // Assez large pour les modèles qui « réfléchissent » avant de répondre (gpt-oss).
+  AI_MAX_OUTPUT_TOKENS: intFrom(1000),
   AI_DAILY_BUDGET_USD: numFrom(0.5),
   AI_PRICE_INPUT_PER_MTOK: numFrom(0.15),
   AI_PRICE_OUTPUT_PER_MTOK: numFrom(0.6),

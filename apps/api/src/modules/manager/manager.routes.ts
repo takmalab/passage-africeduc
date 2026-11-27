@@ -333,8 +333,8 @@ managerRouter.get('/ai/usage', async (_req, res) => {
   res.json({
     budgetUsd: env.AI_DAILY_BUDGET_USD,
     spentTodayUsd: await spentTodayUsd(),
-    model: env.MISTRAL_MODEL,
-    keyConfigured: Boolean(env.MISTRAL_API_KEY),
+    model: env.AI_MODEL,
+    keyConfigured: Boolean(env.AI_API_KEY),
     calls: calls.map((c) => ({ ...c, estimatedCostUsd: Number(c.estimatedCostUsd) })),
   });
 });

@@ -136,3 +136,13 @@ Le sujet ne valorise pas l'hébergement. Une image Docker unique et un script d'
 **Si on l'ajoutait**, ce serait avec le moindre privilège : un rôle `PLATFORM_ADMIN` qui ne voit que des chiffres agrégés par établissement (élèves, taux de présence, anomalies, coût de l'IA), jamais de données nominatives d'élèves ; un accès exceptionnel aux données d'une école seulement avec un motif tracé dans le journal d'audit ; une double authentification obligatoire.
 
 **Écarté.** Un super administrateur qui voit toutes les données, codé dans le temps du test : c'est le compte le plus dangereux du système, car il contourne par définition le cloisonnement entre écoles. Un oubli dans une seule route exposerait les données de tous les établissements, pour une fonctionnalité que le sujet ne demande pas.
+
+## D17. Fournisseur de modèle interchangeable : Groq (gratuit) à la place de Mistral
+
+**Problème.** D5 prévoyait Mistral Small. Au moment de brancher une vraie clé, l'API Mistral a refusé chaque appel : « You need a subscription to access this API » (402). L'offre gratuite « Experiment » n'était plus proposée sur le compte ; seul un forfait payant donne des crédits d'API. Le sujet n'exige pas de payer (« vous appelez un service existant, ou vous travaillez en mode dégradé »).
+
+**Retenu.** Le client appelle n'importe quelle API au format « chat/completions » avec sortie JSON schema stricte (`ChatCompletionsClient`). Le fournisseur se choisit dans le `.env` (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`), sans toucher au code. Par défaut : **Groq**, modèle `openai/gpt-oss-120b`, offre gratuite sans carte. Les garde-fous (schéma, aucun chiffre écrit par le modèle, un seul nouvel essai, gabarit, cache, budget, journal) sont indépendants du fournisseur. Ce qui est envoyé au modèle (classe, date, noms des marqueurs) ne contient aucune donnée d'élève : une offre gratuite qui pourrait réutiliser les requêtes reste acceptable. `AI_MAX_OUTPUT_TOKENS` passe à 1 000, car ce modèle « réfléchit » avant de répondre et cette réflexion consomme des tokens.
+
+**Écarté.** Payer l'abonnement Mistral (coût sans gain pour le sujet). Le SDK officiel du fournisseur (une dépendance de plus pour un seul appel HTTP). Google Gemini (requêtes gratuites réutilisées pour améliorer ses produits, compatibilité annoncée partielle). Rester uniquement en mode gabarit : acceptable, mais la synthèse rédigée par un modèle n'aurait jamais été démontrée.
+
+**Limite.** Les modèles gratuits de Groq changent de temps en temps : si `AI_MODEL` disparaît, l'appel échoue, la raison est journalisée et le gabarit prend le relais. Les tarifs `AI_PRICE_*` restent des estimations pour le plafond de dépense.

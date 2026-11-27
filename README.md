@@ -2,7 +2,7 @@
 
 Module de suivi des passages d'élèves par badge, pour SchoolLogs (test technique Afric'Éduc, sujet B).
 
-L'agent de portail valide les badges **même sans réseau** ; le serveur détecte seul les passages manquants, prévient les parents, et produit une synthèse du jour avec Mistral **sans jamais laisser le modèle écrire un chiffre**.
+L'agent de portail valide les badges **même sans réseau** ; le serveur détecte seul les passages manquants, prévient les parents, et produit une synthèse du jour avec un modèle de langage (Groq) **sans jamais laisser le modèle écrire un chiffre**.
 
 [![CI](https://github.com/takmalab/passage-africeduc/actions/workflows/ci.yml/badge.svg)](https://github.com/takmalab/passage-africeduc/actions/workflows/ci.yml)
 [![Sécurité](https://github.com/takmalab/passage-africeduc/actions/workflows/security.yml/badge.svg)](https://github.com/takmalab/passage-africeduc/actions/workflows/security.yml)
@@ -42,16 +42,16 @@ L'agent de portail valide les badges **même sans réseau** ; le serveur détect
 
 ## Technologies et justification
 
-| Brique       | Choix                                                                                | Pourquoi                                                                                               |
-| ------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Organisation | Monorepo npm workspaces : `apps/api`, `apps/web`, `packages/shared`                  | Formats de badge et protocole de synchronisation partagés et testés une fois                           |
-| API          | Node.js 22, Express 5, TypeScript, Zod 4                                             | Simple à lire et à expliquer ; Express 5 gère nativement les erreurs asynchrones                       |
-| Base         | PostgreSQL 16, Prisma 7 (adaptateur `pg`)                                            | Index unique partiel, contraintes CHECK, `ON CONFLICT`, verrous : l'intégrité est garantie par la base |
-| PWA          | Vite 8, React 19, vite-plugin-pwa, Dexie (IndexedDB), Tailwind 4                     | Toute l'application en cache, hors ligne fiable ; servie par Express sur la même origine               |
-| Badges       | Cartes NFC NTAG 424 DNA (mode SUN), lues par Web NFC ; cartes QR imprimées en option | Voir DECISIONS.md D1                                                                                   |
-| IA           | Mistral Small (`mistral-small-latest`), sortie JSON schema stricte                   | Peu coûteux, francophone, sortie contrainte                                                            |
-| Tests        | Vitest, Supertest, vraie base PostgreSQL                                             | Les garanties critiques sont dans la base : on les teste sur une vraie base                            |
-| CI           | GitHub Actions : lint, types, tests, build, migrations, Gitleaks, npm audit, CodeQL  |                                                                                                        |
+| Brique       | Choix                                                                                                            | Pourquoi                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Organisation | Monorepo npm workspaces : `apps/api`, `apps/web`, `packages/shared`                                              | Formats de badge et protocole de synchronisation partagés et testés une fois                           |
+| API          | Node.js 22, Express 5, TypeScript, Zod 4                                                                         | Simple à lire et à expliquer ; Express 5 gère nativement les erreurs asynchrones                       |
+| Base         | PostgreSQL 16, Prisma 7 (adaptateur `pg`)                                                                        | Index unique partiel, contraintes CHECK, `ON CONFLICT`, verrous : l'intégrité est garantie par la base |
+| PWA          | Vite 8, React 19, vite-plugin-pwa, Dexie (IndexedDB), Tailwind 4                                                 | Toute l'application en cache, hors ligne fiable ; servie par Express sur la même origine               |
+| Badges       | Cartes NFC NTAG 424 DNA (mode SUN), lues par Web NFC ; cartes QR imprimées en option                             | Voir DECISIONS.md D1                                                                                   |
+| IA           | `openai/gpt-oss-120b` chez Groq (offre gratuite), sortie JSON schema stricte ; fournisseur interchangeable (D17) | Gratuit, rapide, sortie contrainte ; Mistral prévu à l'origine mais devenu payant                      |
+| Tests        | Vitest, Supertest, vraie base PostgreSQL                                                                         | Les garanties critiques sont dans la base : on les teste sur une vraie base                            |
+| CI           | GitHub Actions : lint, types, tests, build, migrations, Gitleaks, npm audit, CodeQL                              |                                                                                                        |
 
 ## Installation
 
@@ -121,16 +121,16 @@ En plus : protection CSRF (en-tête obligatoire + contrôle d'origine), journal 
 
 ## Mode dégradé
 
-| Situation                                                              | Comportement                                                                             |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Pas de clé Mistral                                                     | Synthèse produite par gabarit, mêmes chiffres, origine « Gabarit » affichée, aucun appel |
-| Mistral en panne ou plus de 8 s                                        | Un seul nouvel essai, puis gabarit ; l'erreur est journalisée dans `AiCall`              |
-| Sortie du modèle invalide (schéma, chiffre écrit, quantité en lettres) | Un seul nouvel essai, puis gabarit                                                       |
-| Budget du jour atteint (`AI_DAILY_BUDGET_USD`)                         | Appel bloqué, message clair, gabarit                                                     |
-| Même demande déjà faite                                                | Résultat servi depuis le cache, non facturé                                              |
-| Réseau coupé au portail                                                | Scans gardés dans IndexedDB, envoi automatique au retour du réseau                       |
-| Session expirée pendant le hors ligne                                  | Les scans restent sur le téléphone jusqu'à la reconnexion                                |
-| Serveur arrêté à la clôture d'une fenêtre                              | Rattrapage au redémarrage (veille comprise)                                              |
+| Situation                                                              | Comportement                                                                                     |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Pas de clé d'IA (`AI_API_KEY` vide)                                    | Synthèse produite par gabarit, mêmes chiffres, origine « Gabarit » affichée, aucun appel         |
+| Fournisseur en panne, refus (ex. abonnement) ou plus de 8 s            | Un seul nouvel essai, puis gabarit ; l'erreur et son explication sont journalisées dans `AiCall` |
+| Sortie du modèle invalide (schéma, chiffre écrit, quantité en lettres) | Un seul nouvel essai, puis gabarit                                                               |
+| Budget du jour atteint (`AI_DAILY_BUDGET_USD`)                         | Appel bloqué, message clair, gabarit                                                             |
+| Même demande déjà faite                                                | Résultat servi depuis le cache, non facturé                                                      |
+| Réseau coupé au portail                                                | Scans gardés dans IndexedDB, envoi automatique au retour du réseau                               |
+| Session expirée pendant le hors ligne                                  | Les scans restent sur le téléphone jusqu'à la reconnexion                                        |
+| Serveur arrêté à la clôture d'une fenêtre                              | Rattrapage au redémarrage (veille comprise)                                                      |
 
 ## Ce qui n'est pas terminé
 

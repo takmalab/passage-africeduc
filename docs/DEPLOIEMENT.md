@@ -25,6 +25,6 @@ npm run db:init:prod -- "postgresql://...?sslmode=require"   # migrations + donn
 
 ## Hébergement de l'application (Docker)
 
-L'image `Dockerfile` applique les migrations au démarrage puis lance le serveur (programme de fond inclus). Exemple Render : « New Web Service » > depuis le dépôt > Docker ; variables : `DATABASE_URL`, `BADGE_KEYS_MASTER_KEY`, `APP_ORIGIN=https://<url>`, `TRUST_PROXY=true`, `NODE_ENV=production`, éventuellement `MISTRAL_API_KEY`.
+L'image `Dockerfile` applique les migrations au démarrage puis lance le serveur (programme de fond inclus). Exemple Render : « New Web Service » > depuis le dépôt > Docker ; variables : `DATABASE_URL`, `BADGE_KEYS_MASTER_KEY`, `APP_ORIGIN=https://<url>`, `TRUST_PROXY=true`, `NODE_ENV=production`, éventuellement `AI_API_KEY` (et `AI_BASE_URL`, `AI_MODEL` pour un autre fournisseur).
 
 Limite : une offre gratuite qui se met en veille arrête aussi le programme de fond ; le rattrapage au réveil limite le problème.

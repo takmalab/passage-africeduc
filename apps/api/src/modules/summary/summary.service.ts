@@ -90,7 +90,7 @@ export async function generateSummary(
   if (!facts) throw notFound('Classe introuvable.');
 
   const client = getLlmClient();
-  const model = client?.model ?? env.MISTRAL_MODEL;
+  const model = client?.model ?? env.AI_MODEL;
   const cacheKey = sha256Hex(`${model}|${PROMPT_VERSION}|${canonicalJson(facts)}`);
 
   const save = (

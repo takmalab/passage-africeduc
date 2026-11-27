@@ -19,7 +19,7 @@ export const modelOutputSchema = z
 
 export type ModelOutput = z.infer<typeof modelOutputSchema>;
 
-/** Schéma JSON envoyé à Mistral (mode « json_schema » strict). */
+/** Schéma JSON envoyé au modèle (mode « json_schema » strict). */
 export const MODEL_JSON_SCHEMA = {
   type: 'object',
   properties: {

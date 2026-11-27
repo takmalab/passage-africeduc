@@ -4,7 +4,7 @@
 apps/web (PWA)  --HTTPS, cookie de session-->  apps/api (Express 5)  --Prisma-->  PostgreSQL
    IndexedDB (file de scans)                     routes -> services          contraintes uniques,
    Web NFC / caméra                              programme de fond           index partiel, CHECK
-                                                 LlmClient -> Mistral (optionnel)
+                                                 LlmClient -> Groq (optionnel)
                                                  NotificationProvider -> boîte d'envoi
 ```
 

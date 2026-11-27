@@ -69,7 +69,7 @@ if (-not (Test-Path ".env")) {
     -replace "passage:CHANGE_ME@", "passage:passage@" `
     -replace "(?m)^BADGE_KEYS_MASTER_KEY=.*$", "BADGE_KEYS_MASTER_KEY=$key" |
     Set-Content ".env" -Encoding utf8
-  Ok ".env créé (clé maîtresse des badges générée). Ajoutez MISTRAL_API_KEY si vous en avez une."
+  Ok ".env créé (clé maîtresse des badges générée). Ajoutez AI_API_KEY (clé Groq gratuite) si vous en avez une."
 } else { Ok ".env déjà présent (non modifié)" }
 
 Step "Dépendances"

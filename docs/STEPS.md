@@ -87,10 +87,10 @@ Astuce : dans Claude Code, demander « explique-moi ce fichier ligne par ligne c
 
 C'est bon quand : vous savez expliquer à voix haute les 5 points : carte NFC, idempotence, horloge, programme de fond, garde-fous IA.
 
-## Étape 5. Clé Mistral (facultatif)
+## Étape 5. Clé d'IA (facultatif)
 
-- [ ] Créer une clé sur https://console.mistral.ai (offre gratuite « Experiment »).
-- [ ] La mettre dans `.env` : `MISTRAL_API_KEY=...` (jamais dans le dépôt).
+- [ ] Créer une clé gratuite sur https://console.groq.com (l'API Mistral demande désormais un abonnement payant, voir DECISIONS.md D17).
+- [ ] La mettre dans `.env` : `AI_API_KEY=...` (jamais dans le dépôt, ni dans une capture d'écran).
 - [ ] Redémarrer, régénérer la synthèse : origine « Rédigée par le modèle ». Regénérer : « Cache : non facturé ».
 
 ## Étape 6. Ajustements personnels (et commits réguliers)
