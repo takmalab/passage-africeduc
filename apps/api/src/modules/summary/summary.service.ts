@@ -11,10 +11,16 @@ import { notFound } from '../../lib/errors.js';
 import { logger } from '../../lib/logger.js';
 import { dateFromKey } from '../anomalies/anomalies.service.js';
 import { computeFacts, type SummaryFacts } from './facts.js';
-import { ALLOWED_PLACEHOLDERS, templateSummary, validateAndFill } from './guard.js';
+import {
+  ALLOWED_PLACEHOLDERS,
+  PLACEHOLDER_MEANINGS,
+  templateSummary,
+  validateAndFill,
+} from './guard.js';
 import { getLlmClient, LlmTimeoutError, type LlmClient } from './llm.js';
 
-export const PROMPT_VERSION = 'v1';
+// v2 : la consigne donne le sens de chaque marqueur. Changer la version invalide le cache.
+export const PROMPT_VERSION = 'v2';
 const MAX_ATTEMPTS = 2; // une tentative + un seul nouvel essai
 
 export type SummaryView = {
@@ -28,10 +34,11 @@ export type SummaryView = {
   notice: string | null;
 };
 
-const SYSTEM_PROMPT = `Tu rédiges la synthèse quotidienne des passages d'une classe pour le responsable d'un établissement scolaire.
+export const SYSTEM_PROMPT = `Tu rédiges la synthèse quotidienne des passages d'une classe pour le responsable d'un établissement scolaire.
 Règles absolues :
 - Tu ne connais aucun chiffre. Tu écris un gabarit de phrase avec des marqueurs entre accolades, que le logiciel remplacera.
-- Marqueurs disponibles : ${ALLOWED_PLACEHOLDERS.map((m) => `{${m}}`).join(', ')}.
+- Marqueurs disponibles et leur sens exact (emploie des mots fidèles à ce sens) :
+${ALLOWED_PLACEHOLDERS.map((m) => `  {${m}} : ${PLACEHOLDER_MEANINGS[m]}`).join('\n')}
 - Marqueurs obligatoires : {present}, {enrolled}, {late}, {outOfWindow}, {missed}.
 - N'écris aucun chiffre, aucun nombre en lettres, aucun mot de quantité (un, une, aucun, tous, plusieurs, quelques...).
 - Accorde avec "(s)" si nécessaire, par exemple "{late} retard(s)".

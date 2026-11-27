@@ -44,6 +44,25 @@ export const ALLOWED_PLACEHOLDERS = [
   'badgeAlerts',
 ] as const;
 
+/**
+ * Sens de chaque marqueur, repris de computeFacts (facts.ts) et donné au modèle :
+ * il ne peut pas inventer un chiffre, mais il pourrait mal nommer un chiffre exact.
+ * Le type Record impose une signification pour CHAQUE marqueur autorisé.
+ */
+export const PLACEHOLDER_MEANINGS: Record<(typeof ALLOWED_PLACEHOLDERS)[number], string> = {
+  enrolled: "nombre d'élèves inscrits dans la classe",
+  present: "nombre d'élèves présents (au moins un passage validé dans la journée)",
+  excused: "nombre d'élèves en absence justifiée",
+  late: "nombre d'arrivées en retard au premier point de l'itinéraire",
+  outOfWindow:
+    'nombre des autres passages en dehors de leur plage horaire (sorties anticipées ou tardives)',
+  outOfWindowTimes: 'heures de ces passages hors plage, déjà mises en forme',
+  missed:
+    "nombre de passages manquants : points de l'itinéraire attendus et non validés (bus non pris, sortie non badgée). Ce ne sont pas des absences : un élève présent peut avoir un passage manquant",
+  badgeAlerts:
+    "nombre d'alertes de sécurité du badge (tentative de copie, badge désactivé présenté)",
+};
+
 /** Marqueurs obligatoires : la synthèse doit au moins dire ces chiffres. */
 export const REQUIRED_PLACEHOLDERS = [
   'present',
