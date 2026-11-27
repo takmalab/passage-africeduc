@@ -1,5 +1,6 @@
 import QrScanner from 'qr-scanner';
 import { useEffect, useRef, useState } from 'react';
+import { createRepeatGuard } from './repeat-guard';
 
 /**
  * Lecture de QR à la caméra : cartes QR imprimées et codes affichés par le
@@ -7,20 +8,16 @@ import { useEffect, useRef, useState } from 'react';
  */
 export function QrCamera({ onCode }: { onCode: (code: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
-  const last = useRef<{ code: string; at: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!video.current) return;
+    // Un même QR n'est renvoyé qu'après avoir quitté la caméra pendant 3 s.
+    const accept = createRepeatGuard(3000);
     const scanner = new QrScanner(
       video.current,
       (result) => {
-        // Évite de relire le même QR en boucle pendant qu'il reste devant la caméra.
-        const now = Date.now();
-        if (last.current && last.current.code === result.data && now - last.current.at < 3000)
-          return;
-        last.current = { code: result.data, at: now };
-        onCode(result.data);
+        if (accept(result.data, Date.now())) onCode(result.data);
       },
       { returnDetailedScanResult: true, highlightScanRegion: true, maxScansPerSecond: 5 },
     );
