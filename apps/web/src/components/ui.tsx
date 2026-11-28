@@ -42,9 +42,11 @@ export function Card({
   children: ReactNode;
   className?: string;
 }) {
+  // Pas de backdrop-blur ici : un flou d'arrière-plan « enferme » les éléments
+  // fixed qu'il contient (le grand verdict de l'agent passait sous la carte suivante).
   return (
     <section
-      className={`rounded-2xl border border-white/70 bg-white/85 p-5 shadow-[0_1px_3px_rgb(74_36_20/0.06),0_8px_24px_-12px_rgb(74_36_20/0.15)] backdrop-blur-sm ${className}`}
+      className={`rounded-2xl border border-white/70 bg-white/85 p-5 shadow-[0_1px_3px_rgb(74_36_20/0.06),0_8px_24px_-12px_rgb(74_36_20/0.15)] ${className}`}
     >
       {(title || actions) && (
         <header className="mb-3 flex items-center justify-between gap-2">
