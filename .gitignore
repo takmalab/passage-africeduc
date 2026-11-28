@@ -25,3 +25,6 @@ npm-debug.log*
 .idea/
 playwright-report/
 test-results/
+docs/video/montage/sortie/
+docs/video/montage/voix-*.mp3
+docs/video/montage/motion/icones.js

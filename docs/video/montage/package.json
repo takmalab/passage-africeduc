@@ -1,0 +1,13 @@
+{
+  "name": "passage-capsule-montage",
+  "private": true,
+  "type": "module",
+  "description": "Montage de la capsule vidéo (hors application) : images avec sharp, vidéo avec ffmpeg.",
+  "scripts": {
+    "fabriquer": "node fabriquer.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.65.1",
+    "sharp": "^0.34.0"
+  }
+}

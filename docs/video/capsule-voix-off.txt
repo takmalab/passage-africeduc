@@ -1,0 +1,21 @@
+Mon enfant est-il bien arrivé à l'école ? Est-il monté dans le bus ? Est-il sorti à l'heure ? <break time="1.0s" />
+
+Avec Passage de SchoolLogs, la réponse arrive en une seconde. L'élève présente son badge, au portail ou dans le bus, et son passage est enregistré. <break time="1.0s" />
+
+Et pour l'élève ? Pas de téléphone, pas de mot de passe : juste son badge, et un geste. <break time="1.0s" />
+
+Et pour l'agent ? Un simple téléphone suffit. Si le réseau coupe, rien n'est perdu : chaque passage est gardé, puis envoyé dès que la connexion revient. <break time="1.0s" />
+
+Et s'il ne passe pas à l'heure prévue ? Ses parents reçoivent automatiquement un message clair. Et chaque parent ne voit que ses propres enfants. <break time="1.0s" />
+
+Un jour férié, une absence justifiée, une sortie autorisée ? L'école l'indique en un instant, et personne n'est alerté pour rien. <break time="1.0s" />
+
+Et si quelqu'un copie le badge ? La copie est refusée, et l'école est alertée. <break time="1.0s" />
+
+Qui est présent, qui est absent, qui est en retard aujourd'hui ? Enseignants et direction obtiennent le résumé de chaque classe en un clic. L'intelligence artificielle le rédige ; les chiffres, eux, sont calculés par le système, et toujours exacts. <break time="1.0s" />
+
+Et pour les partenaires ? Des données fiables, protégées, et une solution pensée pour le terrain, même là où le réseau est fragile. <break time="1.0s" />
+
+Passage, le suivi des élèves pensé pour SchoolLogs. Téléchargez SchoolLogs sur schoollogs point com. Une question ? Écrivez à support arobase schoollogs point com. <break time="1.0s" />
+
+L'école sait. Les parents sont rassurés.

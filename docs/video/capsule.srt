@@ -1,35 +1,100 @@
 1
-00:00:05,000 --> 00:00:12,000
-Chaque matin, des milliers de parents se demandent :
+00:00:03,200 --> 00:00:06,031
+Mon enfant est-il bien arrivé à l'école ?
+Est-il monté dans le bus ? Est-il sorti à
 
 2
-00:00:12,000 --> 00:00:18,000
-mon enfant est-il bien arrivé à l'école ?
+00:00:06,031 --> 00:00:06,338
+l'heure ?
 
 3
-00:00:18,000 --> 00:00:24,000
-Avec Passage, l'élève pose sa carte, comme un paiement sans contact.
+00:00:06,683 --> 00:00:10,583
+Avec Passage de SchoolLogs, la réponse
+arrive en une seconde. L'élève présente son
 
 4
-00:00:24,000 --> 00:00:30,000
-Une seconde, c'est enregistré.
+00:00:10,583 --> 00:00:13,627
+badge, au portail ou dans le bus, et son
+passage est enregistré.
 
 5
-00:00:30,000 --> 00:00:42,000
-Même quand le réseau tombe, rien n'est perdu : tout part dès qu'il revient.
+00:00:13,879 --> 00:00:16,338
+Et pour l'élève ? Pas de téléphone, pas de
+mot de passe : juste son badge, et un geste.
 
 6
-00:00:42,000 --> 00:00:55,000
-Si votre enfant ne passe pas au portail, vous êtes prévenu automatiquement.
+00:00:16,671 --> 00:00:20,049
+Et pour l'agent ? Un simple téléphone
+suffit. Si le réseau coupe, rien n'est perdu
 
 7
-00:00:55,000 --> 00:01:08,000
-Une photo de la carte ne sert à rien : chaque passage est signé et ne vaut qu'une fois.
+00:00:20,049 --> 00:00:22,892
+: chaque passage est gardé, puis envoyé dès
+que la connexion revient.
 
 8
-00:01:08,000 --> 00:01:20,000
-Le soir, l'école reçoit un résumé clair de la journée, avec des chiffres toujours exacts.
+00:00:23,149 --> 00:00:26,243
+Et s'il ne passe pas à l'heure prévue ? Ses
+parents reçoivent automatiquement un message
 
 9
-00:01:20,000 --> 00:01:28,000
-Passage. L'école sait, les parents sont rassurés.
+00:00:26,243 --> 00:00:28,212
+clair. Et chaque parent ne voit que ses
+propres enfants.
+
+10
+00:00:28,506 --> 00:00:32,441
+Un jour férié, une absence justifiée, une
+sortie autorisée ? L'école l'indique en un
+
+11
+00:00:32,441 --> 00:00:34,503
+instant, et personne n'est alerté pour rien.
+
+12
+00:00:34,794 --> 00:00:37,008
+Et si quelqu'un copie le badge ? La copie
+est refusée, et l'école est alertée.
+
+13
+00:00:37,448 --> 00:00:40,584
+Qui est présent, qui est absent, qui est en
+retard aujourd'hui ? Enseignants et
+
+14
+00:00:40,584 --> 00:00:43,521
+direction obtiennent le résumé de chaque
+classe en un clic. L'intelligence
+
+15
+00:00:43,521 --> 00:00:46,894
+artificielle le rédige ; les chiffres, eux,
+sont calculés par le système, et toujours
+
+16
+00:00:46,894 --> 00:00:47,172
+exacts.
+
+17
+00:00:47,513 --> 00:00:51,150
+Et pour les partenaires ? Des données
+fiables, protégées, et une solution pensée
+
+18
+00:00:51,150 --> 00:00:53,423
+pour le terrain, même là où le réseau est
+fragile.
+
+19
+00:00:53,779 --> 00:00:57,580
+Passage, le suivi des élèves pensé pour
+SchoolLogs. Téléchargez SchoolLogs sur
+
+20
+00:00:57,580 --> 00:01:00,699
+schoollogs.com. Une question ? Écrivez à
+support@schoollogs.com.
+
+21
+00:01:00,967 --> 00:01:02,290
+L'école sait. Les parents sont rassurés.
